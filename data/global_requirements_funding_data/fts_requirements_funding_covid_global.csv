@@ -1,0 +1,153 @@
+countryCode,id,name,code,typeId,typeName,startDate,endDate,year,requirements,funding,covidFunding,covidPercentageOfFunding
+AFG,1100,Afghanistan Humanitarian Response Plan 2022,HAFG22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,4442200000,3269032938,12744301,0
+AFG,1031,Afghanistan Humanitarian Response Plan 2021,HAFG21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,868666483,833236959,21031388,3
+AFG,929,Afghanistan Humanitarian Response Plan 2020,HAFG20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,1131050820,600940338,187852973,31
+AFG,1006,GHRP (COVID) Famine Prevention 2020,OGLBL20b,6,Other,2020-05-01,2020-12-31,2020,,15000000,15000000,100
+AGO,946,Democratic Republic of the Congo Regional Refugee Response Plan 2020,RDRCRRP20,111,Regional response plan,2020-01-01,2020-12-31,2020,,9604566,1038000,11
+ARG,944,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2020,RREG20,111,Regional response plan,2020-01-01,2020-12-31,2020,18938063,5623402,761070,14
+BDI,1075,Burundi Plan de Réponse Humanitaire 2022,HBDI22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,182414025,75530712,3892490,5
+BDI,1039,Burundi Plan de Réponse Humanitaire 2021,HBDI21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,194684000,90170101,2763810,3
+BDI,922,Burundi Plan de Réponse Humanitaire 2020,HBDI20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,197893000,89049799,12219267,14
+BEN,986,Bénin Plan de Réponse Intersectorielle COVID-19 2020,OBEN20,6,Other,2020-05-01,2020-12-31,2020,17930000,3346554,3346554,100
+BFA,1087,Burkina Faso Plan de Réponse Humanitaire 2022,HBFA22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,805099698,355267566,1154969,0
+BFA,1037,Burkina Faso Plan de Réponse Humanitaire 2021,HBFA21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,607875894,312447454,2180816,1
+BFA,930,Burkina Faso Plan de Réponse Humanitaire 2020,HBFA20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,424357861,257103703,52844686,21
+BGD,1023,Rohingya Humanitarian Crisis Joint Response Plan 2021,RBGD21,111,Regional response plan,2021-01-01,2021-12-31,2021,943123350,689644844,15665084,2
+BGD,998,Bangladesh Intersectoral COVID-19 Response Plan 2020,OBGD20,6,Other,2020-05-01,2020-12-31,2020,205934700,56199523,52173448,93
+BGD,906,Rohingya Humanitarian Crisis Joint Response Plan 2020,RBGD20,111,Regional response plan,2020-01-01,2020-12-31,2020,1058092856,630040126,84344750,13
+BOL,944,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2020,RREG20,111,Regional response plan,2020-01-01,2020-12-31,2020,5796141,3289435,2475036,75
+BRA,1069,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2022,RREG22,111,Regional response plan,2022-01-01,2022-12-31,2022,125548197,31892778,319337,1
+BRA,1021,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2021,RREG21,111,Regional response plan,2021-01-01,2021-12-31,2021,98126574,41078278,2427882,6
+BRA,944,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2020,RREG20,111,Regional response plan,2020-01-01,2020-12-31,2020,59659922,51510911,16948679,33
+CAF,1064,République Centrafricaine Plan de Réponse Humanitaire 2022,HCAF22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,461253975,444602691,1530806,0
+CAF,1025,République Centrafricaine Plan de Réponse Humanitaire 2021,HCAF21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,444760000,408528936,8915724,2
+CAF,923,République Centrafricaine Plan de Réponse Humanitaire 2020,HCAF2021,4,Humanitarian response plan,2020-01-02,2021-01-01,2020,553622290,376984112,80489898,21
+CHL,944,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2020,RREG20,111,Regional response plan,2020-01-01,2020-12-31,2020,59659922,9094497,283856,3
+CMR,1030,Cameroon Humanitarian Response Plan  2021,HCMR21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,361554315,194934692,9510837,5
+CMR,927,Cameroon Humanitarian Response Plan 2020,HCMR20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,390920124,193292048,53132880,27
+COD,1093,République Démocratique du Congo Plan de Réponse Humanitaire 2022,HCOD22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,1881674597,1005134053,4864414,0
+COD,1026,République Démocratique du Congo Plan de Réponse Humanitaire 2021,HCOD21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,1984303303,869811526,24173266,3
+COD,919,République Démocratique du Congo Plan de Réponse Humanitaire 2020,HCOD20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,2069134820,866481462,122216620,14
+COD,1006,GHRP (COVID) Famine Prevention 2020,OGLBL20b,6,Other,2020-05-01,2020-12-31,2020,,7000000,7000000,100
+COG,1092,Democratic Republic of the Congo Regional Refugee Response Plan 2022,RDRCRRP22,111,Regional response plan,2022-01-01,2022-12-31,2022,15470197,16289288,992842,6
+COG,1005,République du Congo Plan de Réponse Intersectorielle COVID-19 2020,OCOG20,6,Other,2020-01-05,2020-12-31,2020,11989124,3539451,1519025,43
+COG,946,Democratic Republic of the Congo Regional Refugee Response Plan 2020,RDRCRRP20,111,Regional response plan,2020-01-01,2020-12-31,2020,,5301576,2437361,46
+COL,1090,Colombia Plan de Respuesta Humanitaria 2022,HCOL22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,282854048,123464837,695931,1
+COL,1069,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2022,RREG22,111,Regional response plan,2022-01-01,2022-12-31,2022,802903743,330009667,4201957,1
+COL,1016,Colombia Plan de Respuesta Humanitaria 2021,HCOL21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,174010305,87380598,5276553,6
+COL,1021,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2021,RREG21,111,Regional response plan,2021-01-01,2021-12-31,2021,640990540,313193552,846727,0
+COL,950,Colombia Plan de Respuesta Humanitaria 2020,HCOL20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,209700000,28915918,531350,2
+COL,985,Colombia Plan de Respuesta Intersectorial COVID-19 2020,OCOL20,6,Other,2020-05-01,2020-12-31,2020,283920647,35750996,34142644,96
+COL,944,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2020,RREG20,111,Regional response plan,2020-01-01,2020-12-31,2020,59659922,353653191,15116721,4
+CRI,944,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2020,RREG20,111,Regional response plan,2020-01-01,2020-12-31,2020,59659922,2598209,1784750,69
+DJI,1003,Djibouti Intersectoral COVID-19 Response Plan 2020,ODJI20,6,Other,2020-05-01,2020-12-31,2020,29983416,6685207,5253591,79
+DJI,1008,Regional Migrant Response Plan for the Horn of Africa and Yemen 2020,RDJIETHSOMYEM20,111,Regional response plan,2020-01-01,2020-12-31,2020,,250000,250000,100
+DOM,944,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2020,RREG20,111,Regional response plan,2020-01-01,2020-12-31,2020,59659922,5934628,2671102,45
+ECU,999,Ecuador Plan de Respuesta Intersectorial COVID-19 2020,OECU20,6,Other,2020-05-01,2020-12-31,2020,46425000,20402674,19852674,97
+ECU,944,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2020,RREG20,111,Regional response plan,2020-01-01,2020-12-31,2020,59659922,95691308,3468610,4
+EGY,1020,Syrian Arab Republic Regional Refugee and Resilience Plan (3RP) 2021,RSYR21,111,Regional response plan,2021-01-01,2021-12-31,2021,127315564,74343379,785454,1
+EGY,943,Syrian Arab Republic Regional Refugee and Resilience Plan (3RP) 2020,RSYR20,111,Regional response plan,2020-01-01,2020-12-31,2020,169085255,75728315,14783185,20
+ETH,1079,Ethiopia Humanitarian Response Plan 2022,HETH22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,3335002211,1710540760,2662602,0
+ETH,1041,Ethiopia Humanitarian Response Plan 2021,HETH21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,1488027181,719135365,10855001,2
+ETH,936,Ethiopia Humanitarian Response Plan 2020,HETH20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,1250804122,728748202,107496394,15
+ETH,947,South Sudan Regional Refugee Response Plan 2020,RETHKENUGA20,111,Regional response plan,2020-01-01,2020-12-31,2020,,35721330,8723279,24
+GTM,1085,Guatemala Plan de Respuesta Humanitaria 2022,HGTM22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,153531304,56937681,421965,1
+GUY,944,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2020,RREG20,111,Regional response plan,2020-01-01,2020-12-31,2020,59659922,3296048,587500,18
+HTI,1043,Haïti Plan de Réponse Humanitaire 2021,HHTI21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,235595167,65475775,174091,0
+HTI,1056,Haiti Earthquake Flash Appeal 2021,FHTI2122,5,Flash appeal,2021-08-16,2022-02-15,2021,187295000,77677979,448632,1
+HTI,920,Haïti Plan de Réponse Humanitaire 2020,HHTI20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,471993035,153296222,27438737,18
+IRN,987,Iran Intersectoral COVID-19 Response Plan 2020,OIRN20,6,Other,2020-05-01,2020-12-31,2020,117284681,74082356,73921856,100
+IRQ,1083,Iraq Humanitarian Response Plan 2022,HIRQ22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,400004347,361531966,2622150,1
+IRQ,1035,Iraq Humanitarian Response Plan 2021,HIRQ21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,607196803,393905691,26323312,7
+IRQ,1020,Syrian Arab Republic Regional Refugee and Resilience Plan (3RP) 2021,RSYR21,111,Regional response plan,2021-01-01,2021-12-31,2021,225711493,129203483,1190000,1
+IRQ,866,Iraq Humanitarian Response Plan 2020,HIRQ20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,662168145,616522787,106528835,17
+IRQ,943,Syrian Arab Republic Regional Refugee and Resilience Plan (3RP) 2020,RSYR20,111,Regional response plan,2020-01-01,2020-12-31,2020,293662566,120476875,1689242,1
+JOR,1020,Syrian Arab Republic Regional Refugee and Resilience Plan (3RP) 2021,RSYR21,111,Regional response plan,2021-01-01,2021-12-31,2021,1600000000,401231464,7352021,2
+JOR,1010,Jordan Intersectoral COVID-19 Response Plan 2020,OJOR20,6,Other,2020-05-01,2020-12-31,2020,52845731,18304277,18304277,100
+JOR,943,Syrian Arab Republic Regional Refugee and Resilience Plan (3RP) 2020,RSYR20,111,Regional response plan,2020-01-01,2020-12-31,2020,1475421996,596113474,58086325,10
+KEN,1000,Kenya Intersectoral COVID-19 Response Plan 2020,OKEN20,6,Other,2020-01-05,2020-12-31,2020,254870684,65024903,62105472,96
+KEN,947,South Sudan Regional Refugee Response Plan 2020,RETHKENUGA20,111,Regional response plan,2020-01-01,2020-12-31,2020,,22012106,1868458,8
+LBN,1099,Lebanon Emergency Response Plan 2022,OLBN22,6,Other,2022-01-01,2022-12-31,2022,378175867,331297889,1821000,1
+LBN,1050,Lebanon Emergency Response Plan 2021,OLBN2122,6,Other,2021-08-03,2022-07-31,2021,167976726,119357388,3697580,3
+LBN,1020,Syrian Arab Republic Regional Refugee and Resilience Plan (3RP) 2021,RSYR21,111,Regional response plan,2021-01-01,2021-12-31,2021,2749999998,718485967,2434960,0
+LBN,988,Lebanon Intersectoral COVID-19 Response Plan 2020,OLBN20,6,Other,2020-05-01,2020-12-31,2020,136500000,104662589,89629717,86
+LBN,943,Syrian Arab Republic Regional Refugee and Resilience Plan (3RP) 2020,RSYR20,111,Regional response plan,2020-01-01,2020-12-31,2020,2656353273,1026446911,27376293,3
+LBR,989,Liberia Intersectoral COVID-19 Response Plan 2020,OLBR20,6,Other,2020-05-01,2020-12-31,2020,57000000,7507918,7507918,100
+LBY,1060,Libya Humanitarian Response Plan 2022,HLBY22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,113799273,93699805,5962322,6
+LBY,1027,Libya Humanitarian Response Plan 2021,HLBY21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,189122124,150268390,23260227,15
+LBY,931,Libya Humanitarian Response Plan 2020,HLBY20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,129846005,138340830,39134912,28
+LSO,948,Lesotho Flash Appeal 2019-2020,FLSO1920,5,Flash appeal,2019-11-01,2020-04-30,2020,33745000,13733857,588928,4
+MDG,1047,Madagascar Grand Sud Flash Appeal 2021,FMDG21,5,Flash appeal,2021-01-01,2021-12-31,2021,166188813,119164991,3030871,3
+MEX,944,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2020,RREG20,111,Regional response plan,2020-01-01,2020-12-31,2020,59659922,4415089,2398899,54
+MLI,1076,Mali Plan de Réponse Humanitaire 2022,HMLI22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,685734819,305518806,229514,0
+MLI,1036,Mali Plan de Réponse Humanitaire 2021,HMLI21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,563286869,228381821,17045756,7
+MLI,913,Mali Plan de Réponse Humanitaire 2020,HMLI20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,474292180,235370648,49264975,21
+MMR,1046,Myanmar Humanitarian Response Plan 2021,HMMR21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,276455939,236522511,8112901,3
+MMR,934,Myanmar Humanitarian Response Plan 2020,HMMR20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,275300000,194038320,47168290,24
+MOZ,1094,Mozambique Humanitarian Response Plan 2022,HMOZ22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,388499803,272254554,596231,0
+MOZ,1040,Mozambique Humanitarian Response Plan 2021,HMOZ21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,254080356,201068691,1105808,1
+MOZ,990,Mozambique UN Multi-Sector Response Plan to COVID-19,OMOZ20b,6,Other,2020-05-01,2020-12-31,2020,68105000,67870378,56923500,84
+MWI,1104,Malawi Flash Appeal 2022,FMWI22,5,Flash appeal,2022-02-26,2022-05-31,2022,29450000,21444352,704504,3
+NER,1033,Niger Plan de Réponse Humanitaire 2021,HNER21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,523182880,264175093,12608308,5
+NER,908,Niger Plan de Réponse Humanitaire 2020,HNER20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,516074957,371443223,60187654,16
+NGA,1062,Nigeria Humanitarian Response Plan 2022,HNGA22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,1127211641,752865189,5197532,1
+NGA,1032,Nigeria Humanitarian Response Plan 2021,HNGA21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,1006358629,714719766,41099042,6
+NGA,869,Nigeria Humanitarian Response Plan 2020,HNGA20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,1080446613,631895800,85271412,13
+NGA,1006,GHRP (COVID) Famine Prevention 2020,OGLBL20b,6,Other,2020-05-01,2020-12-31,2020,,15000000,15000000,100
+NPL,1048,Nepal Intersectoral COVID-19 Response Plan 2021,ONPL21,6,Other,2021-05-01,2021-12-31,2021,83621252,5192974,3721057,72
+PAK,1034,Pakistan Humanitarian Response Plan 2021,HPAK21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,332043165,345079875,10920542,3
+PAK,991,Pakistan Intersectoral COVID-19 Response Plan 2020,OPAK20,6,Other,2020-01-05,2020-12-31,2020,145788878,81074399,77522440,96
+PAN,944,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2020,RREG20,111,Regional response plan,2020-01-01,2020-12-31,2020,59659922,5795186,1287500,22
+PER,1021,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2021,RREG21,111,Regional response plan,2021-01-01,2021-12-31,2021,274663651,95568938,970465,1
+PER,944,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2020,RREG20,111,Regional response plan,2020-01-01,2020-12-31,2020,59659922,68131554,7577876,11
+PHL,1101,Philippines Super Typhoon Rai (Odette) Humanitarian Needs and Priorities 2022,OPHL2122,6,Other,2021-12-24,2022-06-30,2022,168906963,95266302,462962,0
+PHL,992,Philippines Intersectoral COVID-19 Response Plan 2020,OPHL20,6,Other,2020-05-01,2020-12-31,2020,121767344,20662507,20562507,100
+PRK,995,DPR Korea Intersectoral COVID-19 Response Plan 2020,OPRK20c,6,Other,2020-05-01,2020-12-31,2020,39692162,3501684,3501684,100
+PRY,944,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2020,RREG20,111,Regional response plan,2020-01-01,2020-12-31,2020,2842779,917659,695000,76
+PSE,1059,Occupied Palestinian Territory Humanitarian Response Plan 2022,HPSE22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,509872202,465216721,780000,0
+PSE,1012,Occupied Palestinian Territory Humanitarian Response Plan 2021,HPSE21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,417567330,376437027,60402702,16
+PSE,1049,Escalation of Hostilities in the OPT  Flash Appeal 2021,FPSE21,5,Flash appeal,2021-05-27,2021-08-27,2021,94862068,48119021,608273,1
+PSE,832,Occupied Palestinian Territory Humanitarian Response Plan 2020,HPSE20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,420381684,327419788,64284400,20
+RWA,1092,Democratic Republic of the Congo Regional Refugee Response Plan 2022,RDRCRRP22,111,Regional response plan,2022-01-01,2022-12-31,2022,75359724,47028754,1183768,3
+RWA,945,Burundi Regional Refugee Response Plan 2020,RRWATZAUGA20,111,Regional response plan,2020-01-01,2020-12-31,2020,,7733529,4217488,55
+RWA,946,Democratic Republic of the Congo Regional Refugee Response Plan 2020,RDRCRRP20,111,Regional response plan,2020-01-01,2020-12-31,2020,,7544175,1845082,24
+SDN,1068,Sudan Humanitarian Response Plan 2022,HSDN22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,1936697740,1115084165,164634,0
+SDN,1014,Sudan Humanitarian Response Plan 2021,HSDN21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,1939814880,735578561,5494254,1
+SDN,870,Sudan Humanitarian Response Plan 2020,HSDN20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,1633403129,871899479,103370321,12
+SLE,993,Sierra Leone Intersectoral COVID-19 Response Plan 2020,OSLE20,6,Other,2020-05-01,2020-12-31,2020,62907725,20093035,20093035,100
+SOM,1063,Somalia Humanitarian Response Plan 2022,HSOM22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,2267407090,2095866208,24551342,1
+SOM,1011,Somalia Humanitarian Response Plan 2021,HSOM21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,1092121872,862339165,13280111,2
+SOM,831,Somalia Humanitarian Response Plan 2020,HSOM20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,1009926527,810861734,89305776,11
+SSD,1098,South Sudan Humanitarian Response Plan 2022,HSSD22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,1699588587,1288416915,4225603,0
+SSD,1013,South Sudan Humanitarian Response Plan 2021,HSSD21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,1677772788,1219709541,32874132,3
+SSD,865,South Sudan Humanitarian Response Plan 2020,HSSD20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,1899937964,1235876749,108013028,9
+SYR,1088,Syrian Arab Republic Humanitarian Response Plan 2022 - 2023,HSYR22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,4444280227,2290837448,321888,0
+SYR,1044,Syrian Arab Republic Humanitarian Response Plan 2021,HSYR21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,4224416702,2315986080,24878962,1
+SYR,924,Syrian Arab Republic Humanitarian Response Plan 2020,HSYR20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,3817532832,2393501877,197579514,8
+TCD,1028,Tchad Plan de Réponse Humanitaire 2021,HTCD21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,617522407,236212336,12744654,5
+TCD,907,Tchad Plan de Réponse Humanitaire 2020,HTCD20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,664641160,303578355,58782066,19
+TGO,994,Togo Plan de Réponse Intersectorielle COVID-19 2020,OTGO20,6,Other,2020-05-01,2020-12-31,2020,19757534,5190103,5190103,100
+TTO,944,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2020,RREG20,111,Regional response plan,2020-01-01,2020-12-31,2020,59659922,5359553,250000,5
+TUR,1020,Syrian Arab Republic Regional Refugee and Resilience Plan (3RP) 2021,RSYR21,111,Regional response plan,2021-01-01,2021-12-31,2021,1035041654,277716504,723043,0
+TUR,943,Syrian Arab Republic Regional Refugee and Resilience Plan (3RP) 2020,RSYR20,111,Regional response plan,2020-01-01,2020-12-31,2020,1302418561,397718383,26956230,7
+TZA,1092,Democratic Republic of the Congo Regional Refugee Response Plan 2022,RDRCRRP22,111,Regional response plan,2022-01-01,2022-12-31,2022,90315733,53144378,1069212,2
+TZA,1001,Tanzania Intersectoral COVID-19 Response Plan 2020,OTZA20,6,Other,2020-05-01,2020-12-31,2020,158874105,20517877,18750377,91
+TZA,945,Burundi Regional Refugee Response Plan 2020,RRWATZAUGA20,111,Regional response plan,2020-01-01,2020-12-31,2020,,21026335,3303976,16
+TZA,946,Democratic Republic of the Congo Regional Refugee Response Plan 2020,RDRCRRP20,111,Regional response plan,2020-01-01,2020-12-31,2020,,6211462,6211462,100
+UGA,1004,Uganda Intersectoral COVID-19 Response Plan 2020,OUGA20,6,Other,2020-05-01,2020-12-31,2020,200157127,33588509,32588509,97
+UGA,947,South Sudan Regional Refugee Response Plan 2020,RETHKENUGA20,111,Regional response plan,2020-01-01,2020-12-31,2020,,28589450,11316608,40
+UKR,1102,Ukraine Flash Appeal 2022,FUKR22,5,Flash appeal,2022-03-01,2022-12-31,2022,4292463880,3765217036,297776,0
+UKR,1015,Ukraine Humanitarian Response Plan 2021,HUKR21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,167982922,106445580,4630064,4
+UKR,830,Ukraine Humanitarian Response Plan 2020,HUKR20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,204653234,123841159,40810567,33
+URY,944,Venezuela Regional Refugee and Migrant Response Plan (RMRP) 2020,RREG20,111,Regional response plan,2020-01-01,2020-12-31,2020,3993239,829723,289723,35
+VEN,1029,Venezuela Plan de Respuesta Humanitaria 2021,HVEN21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,708098081,284585695,2855574,1
+VEN,928,Venezuela Plan de Respuesta Humanitaria con Panorama de Necesidades 2020,HVEN20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,762509363,182209349,42895692,24
+VEN,1007,GHRP (COVID) Unallocated supplementary NGO envelope 2020,OGLBL20a,6,Other,2020-05-01,2020-12-31,2020,,6159855,6159855,100
+YEM,1077,Yemen Humanitarian Response Plan 2022,HYEM22,4,Humanitarian response plan,2022-01-01,2022-12-31,2022,4271938417,2307564279,3859632,0
+YEM,1024,Yemen Humanitarian Response Plan 2021,HYEM21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,3853456397,2424017859,32727397,1
+YEM,925,Yemen Humanitarian Response Plan 2020,HYEM20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,3382681703,1991625512,281486805,14
+ZMB,1092,Democratic Republic of the Congo Regional Refugee Response Plan 2022,RDRCRRP22,111,Regional response plan,2022-01-01,2022-12-31,2022,65179947,8172896,1050120,13
+ZMB,1002,Zambia Intersectoral COVID-19 Response Plan 2020,OZMB20,6,Other,2020-05-01,2020-12-31,2020,125612928,13796362,12990862,94
+ZMB,946,Democratic Republic of the Congo Regional Refugee Response Plan 2020,RDRCRRP20,111,Regional response plan,2020-01-01,2020-12-31,2020,,600000,600000,100
+ZWE,1042,Zimbabwe Humanitarian Response Plan 2021,HZWE21,4,Humanitarian response plan,2021-01-01,2021-12-31,2021,506971461,86203940,2463794,3
+ZWE,921,Zimbabwe Humanitarian Response Plan 2020,HZWE20,4,Humanitarian response plan,2020-01-01,2020-12-31,2020,800770933,213865809,35925432,17
