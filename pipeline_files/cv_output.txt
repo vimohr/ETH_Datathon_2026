@@ -1,0 +1,18 @@
+Running 5-fold CV with BestDeep84...
+1. Loading raw chunk data...
+2. Extracting 1000 sequences...
+3. Indexing actual targets...
+4. Running 5-fold cross-validation on 1000 samples, 20 features...
+  Fold 1/5:  train=+3.2834  val=+2.5764  gap=+0.7070
+  Fold 2/5:  train=+2.9316  val=+2.5863  gap=+0.3453
+  Fold 3/5:  train=+2.6082  val=+3.4762  gap=-0.8680
+  Fold 4/5:  train=+2.7618  val=+2.9234  gap=-0.1616
+  Fold 5/5:  train=+3.6284  val=+1.5076  gap=+2.1207
+
+==================================================
+  AVG TRAIN SHARPE:      +3.0427
+  AVG VALIDATION SHARPE: +2.6140 ± 0.6427
+  AVG GAP:               +0.4287
+==================================================
+
+Done!

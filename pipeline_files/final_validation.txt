@@ -1,0 +1,28 @@
+Features: 20 | Train: 800 | Val: 200
+Traceback (most recent call last):
+  File "<string>", line 21, in <module>
+  File "/scratch/vimohr/ETH_Datathon_2026/pipeline_files/all_models.py", line 142, in fit
+    def fit(self, X, y): self._trainer.fit(X, y)
+                         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/scratch/vimohr/ETH_Datathon_2026/pipeline_files/all_models.py", line 78, in fit
+    es_pos = self.net(X_es_t).squeeze(-1)
+             ^^^^^^^^^^^^^^^^
+  File "/scratch/vimohr/ETH_Datathon_2026/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/scratch/vimohr/ETH_Datathon_2026/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/scratch/vimohr/ETH_Datathon_2026/.venv/lib/python3.11/site-packages/torch/nn/modules/container.py", line 253, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "/scratch/vimohr/ETH_Datathon_2026/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/scratch/vimohr/ETH_Datathon_2026/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/scratch/vimohr/ETH_Datathon_2026/.venv/lib/python3.11/site-packages/torch/nn/modules/linear.py", line 134, in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
