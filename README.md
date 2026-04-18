@@ -275,6 +275,46 @@ The sample sweep spec expands to a directory of config JSON files under `configs
   --config-glob "configs/generated/price_text_model_grid/*.json"
 ```
 
+To run a fast fixed-matrix feature-selection pass and compare a few final subset sizes:
+
+```bash
+.venv/bin/python -m src.pipelines.select_features \
+  --candidate-block price_technical \
+  --candidate-block headline_parser \
+  --total-size 30 \
+  --total-size 40
+```
+
+This writes four report CSVs under `outputs/reports/`:
+
+- candidate cleanup diagnostics
+- per-feature ranking by incremental Sharpe over the locked core
+- correlation-pruned ranking
+- final subset comparisons plus the feature list for each evaluated subset
+
+To do the small-subset workflow discussed during model search, switch the subset builder to greedy forward selection:
+
+```bash
+.venv/bin/python -m src.pipelines.select_features \
+  --no-core \
+  --model ridge \
+  --alpha 10 \
+  --subset-strategy forward \
+  --forward-score oof_sharpe \
+  --candidate-block price \
+  --candidate-block price_technical \
+  --candidate-block headline_parser \
+  --total-size 3 \
+  --total-size 4 \
+  --total-size 5 \
+  --total-size 6 \
+  --total-size 8
+```
+
+In forward mode the selector still writes the standard ranking and subset CSVs, and it also writes a step-by-step `forward_steps` report showing which feature was added at each size. The resulting subset names are `forward_total_<N>`, which can be passed directly into `src.pipelines.train_selected_subset`.
+
+Important: this selector intentionally freezes one full training matrix before CV, so it is best suited to deterministic blocks such as `price`, `price_technical`, and `headline_parser`. Using TF-IDF blocks here will leak fold vocabulary information.
+
 ### Kaggle credentials
 
 The repo will look for credentials in this order:

@@ -1,0 +1,9 @@
+subset_name,feature_order,feature
+price_majority_8,1,price_technical__ema_10_30_cross
+price_majority_8,2,price__tail_return_5
+price_majority_8,3,price__intrabar_range_mean
+price_majority_8,4,price__realized_volatility
+price_majority_8,5,price__max_drawdown
+price_majority_8,6,price__trend_slope_normalized
+price_majority_8,7,headline_parser__top1_time_since_last_strong_event
+price_majority_8,8,headline_parser__conflict_score_mean
