@@ -1,0 +1,11 @@
+{
+  "experiment_name": "price_linear",
+  "feature_blocks": [
+    {
+      "name": "price"
+    }
+  ],
+  "model": {
+    "name": "linear"
+  }
+}

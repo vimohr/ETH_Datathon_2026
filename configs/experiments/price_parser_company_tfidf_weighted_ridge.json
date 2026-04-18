@@ -1,0 +1,30 @@
+{
+  "experiment_name": "price_parser_company_tfidf_weighted_ridge",
+  "feature_blocks": [
+    {
+      "name": "price"
+    },
+    {
+      "name": "headline_parser"
+    },
+    {
+      "name": "headline_company_tfidf",
+      "alias": "company_tfidf",
+      "params": {
+        "text_source": "body",
+        "top_k": 2,
+        "min_df": 2,
+        "max_features": 192,
+        "ngram_max": 2
+      }
+    }
+  ],
+  "model": {
+    "name": "weighted_ridge",
+    "params": {
+      "alpha": 10.0,
+      "weight_power": 0.5,
+      "min_weight": 0.25
+    }
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "name_prefix": "grid",
+  "output_dir": "configs/generated/price_text_model_grid",
+  "base_config": {
+    "cv_folds": 5,
+    "seed": 42
+  },
+  "axes": [
+    {
+      "name": "features",
+      "choices": [
+        {
+          "slug": "price",
+          "config": {
+            "feature_blocks": [
+              {
+                "name": "price"
+              }
+            ]
+          }
+        },
+        {
+          "slug": "price_tech",
+          "config": {
+            "feature_blocks": [
+              {
+                "name": "price"
+              },
+              {
+                "name": "price_technical"
+              }
+            ]
+          }
+        },
+        {
+          "slug": "price_parser",
+          "config": {
+            "feature_blocks": [
+              {
+                "name": "price"
+              },
+              {
+                "name": "headline_parser"
+              }
+            ]
+          }
+        },
+        {
+          "slug": "price_parser_tfidf",
+          "config": {
+            "feature_blocks": [
+              {
+                "name": "price"
+              },
+              {
+                "name": "headline_parser"
+              },
+              {
+                "name": "headline_tfidf",
+                "alias": "body_tfidf",
+                "params": {
+                  "text_source": "body",
+                  "min_df": 2,
+                  "max_features": 256,
+                  "ngram_max": 2
+                }
+              }
+            ]
+          }
+        },
+        {
+          "slug": "price_parser_company_tfidf",
+          "config": {
+            "feature_blocks": [
+              {
+                "name": "price"
+              },
+              {
+                "name": "headline_parser"
+              },
+              {
+                "name": "headline_company_tfidf",
+                "alias": "company_tfidf",
+                "params": {
+                  "text_source": "body",
+                  "top_k": 2,
+                  "min_df": 2,
+                  "max_features": 192,
+                  "ngram_max": 2
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "model",
+      "choices": [
+        {
+          "slug": "linear",
+          "config": {
+            "model": {
+              "name": "linear"
+            }
+          }
+        },
+        {
+          "slug": "ridge_a10",
+          "config": {
+            "model": {
+              "name": "ridge",
+              "params": {
+                "alpha": 10.0
+              }
+            }
+          }
+        },
+        {
+          "slug": "weighted_linear_wp05",
+          "config": {
+            "model": {
+              "name": "weighted_linear",
+              "params": {
+                "weight_power": 0.5,
+                "min_weight": 0.25
+              }
+            }
+          }
+        },
+        {
+          "slug": "weighted_ridge_a10_wp05",
+          "config": {
+            "model": {
+              "name": "weighted_ridge",
+              "params": {
+                "alpha": 10.0,
+                "weight_power": 0.5,
+                "min_weight": 0.25
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "experiment_name": "price_technical_weighted_ridge",
+  "feature_blocks": [
+    {
+      "name": "price"
+    },
+    {
+      "name": "price_technical"
+    }
+  ],
+  "model": {
+    "name": "weighted_ridge",
+    "params": {
+      "alpha": 10.0,
+      "weight_power": 0.5,
+      "min_weight": 0.25
+    }
+  }
+}
