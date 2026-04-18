@@ -5,6 +5,17 @@ For challenge framing read `README.md`, `Instructions.md`, and `challenge_guide.
 
 ---
 
+## Working style
+
+- **Think before changing modeling logic.** State assumptions explicitly before changing targets, features, validation, or position sizing. If a request is ambiguous (research vs implementation, CV optimization vs LB probing, seen-only features vs leakage), clarify instead of guessing.
+- **Prefer the smallest change that can win.** Choose the minimum code needed to improve CV robustness, fix data integrity issues, or make the workflow reproducible. Avoid speculative abstractions, general frameworks, or "future-proofing" that this repo does not need yet.
+- **Make surgical edits.** Do not clean up unrelated notebooks, legacy root-level scripts, or adjacent modules while doing a focused task. If you notice unrelated issues or dead code, mention them instead of changing them.
+- **Define verification up front.** Before implementing, name the check you will use: session-level CV (`--cv-only`), fold-level Sharpe inspection, no-leakage reasoning, submission validation, artifact path checks, or schema/shape assertions.
+- **Prefer evidence over intuition.** For modeling changes, compare against baseline CV Sharpe and inspect fold stability, not just one mean improvement or a public leaderboard bump.
+- **Close the loop on artifacts.** If a run creates a result worth keeping, update `docs/experiment_log.md`. If it creates a submission, always route it through `src/submission.py::save_submission`.
+
+---
+
 ## What we are predicting
 
 - One row per `session` in the test set: `target_position` (float, fictional shares).
