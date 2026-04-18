@@ -19,6 +19,7 @@ from src.submission import build_submission, build_submission_metadata, save_sub
 def _build_feature_frame(
     headlines: pd.DataFrame,
     *,
+    bars: pd.DataFrame | None,
     sessions,
     feature_set: str,
     text_source: str,
@@ -28,6 +29,7 @@ def _build_feature_frame(
     embedding_model: str,
     embedding_batch_size: int,
     normalize_embeddings: bool,
+    use_price_reactions: bool,
 ) -> pd.DataFrame:
     if feature_set == "parser":
         return build_headline_features(headlines, sessions=sessions).fillna(0.0).sort_index()
@@ -35,6 +37,7 @@ def _build_feature_frame(
     if feature_set == "tfidf":
         return build_text_feature_frame(
             headlines,
+            bars=bars if use_price_reactions else None,
             sessions=sessions,
             text_source=text_source,
             aggregation=aggregation,
@@ -43,7 +46,7 @@ def _build_feature_frame(
         ).sort_index()
 
     if feature_set == "embeddings":
-        events = build_headline_event_table(headlines)
+        events = build_headline_event_table(headlines, bars=bars if use_price_reactions else None)
         return build_embedding_feature_frame(
             events,
             sessions=sessions,
@@ -70,11 +73,14 @@ def build_feature_matrix(
     embedding_model: str,
     embedding_batch_size: int,
     normalize_embeddings: bool,
+    use_price_reactions: bool,
 ) -> pd.DataFrame:
-    sessions = load_bars(split, "seen")["session"].unique()
+    bars = load_bars(split, "seen")
+    sessions = bars["session"].unique()
     headlines = load_headlines(split, "seen")
     return _build_feature_frame(
         headlines,
+        bars=bars,
         sessions=sessions,
         feature_set=feature_set,
         text_source=text_source,
@@ -84,6 +90,7 @@ def build_feature_matrix(
         embedding_model=embedding_model,
         embedding_batch_size=embedding_batch_size,
         normalize_embeddings=normalize_embeddings,
+        use_price_reactions=use_price_reactions,
     )
 
 
@@ -113,6 +120,7 @@ def build_model_name(
     aggregation: str,
     include_structured: bool,
     embedding_model: str,
+    use_price_reactions: bool,
 ) -> str:
     if feature_set == "parser":
         return "text_only_parser"
@@ -120,11 +128,15 @@ def build_model_name(
     if feature_set == "embeddings":
         model_slug = embedding_model.rsplit("/", maxsplit=1)[-1].lower().replace("-", "_")
         name_parts = ["text_embed", aggregation, text_source, model_slug]
+        if use_price_reactions:
+            name_parts.append("price_react")
         if include_structured:
             name_parts.append("structured")
         return "_".join(name_parts)
 
     name_parts = ["text_tfidf", aggregation, text_source]
+    if use_price_reactions:
+        name_parts.append("price_react")
     if include_structured:
         name_parts.append("structured")
     return "_".join(name_parts)
@@ -145,6 +157,7 @@ def run_pipeline(
     embedding_model: str,
     embedding_batch_size: int,
     normalize_embeddings: bool,
+    use_price_reactions: bool,
     output_path=None,
     cv_only: bool = False,
 ):
@@ -155,6 +168,7 @@ def run_pipeline(
     train_headlines = load_headlines("train", "seen")
     train_features = _build_feature_frame(
         train_headlines,
+        bars=train_seen_bars,
         sessions=train_targets.index,
         feature_set=feature_set,
         text_source=text_source,
@@ -164,6 +178,7 @@ def run_pipeline(
         embedding_model=embedding_model,
         embedding_batch_size=embedding_batch_size,
         normalize_embeddings=normalize_embeddings,
+        use_price_reactions=use_price_reactions,
     )
     target_return = train_targets["target_return"].sort_index()
 
@@ -188,6 +203,7 @@ def run_pipeline(
         aggregation=aggregation,
         include_structured=include_structured,
         embedding_model=embedding_model,
+        use_price_reactions=use_price_reactions,
     )
     oof_path = OOF_DIR / f"{model_name}_oof.csv"
     oof_predictions.to_csv(oof_path, index_label="session")
@@ -208,6 +224,7 @@ def run_pipeline(
         embedding_model=embedding_model,
         embedding_batch_size=embedding_batch_size,
         normalize_embeddings=normalize_embeddings,
+        use_price_reactions=use_price_reactions,
     )
     predicted_return = model.predict_expected_return(test_features)
     predicted_uncertainty = model.predict_uncertainty(test_features)
@@ -231,7 +248,7 @@ def run_pipeline(
             f"include_structured={include_structured}; min_df={min_df}; max_features={max_features}; "
             f"ngram_max={ngram_max}; ridge_alpha={ridge_alpha}; "
             f"embedding_model={embedding_model}; embedding_batch_size={embedding_batch_size}; "
-            f"normalize_embeddings={normalize_embeddings}"
+            f"normalize_embeddings={normalize_embeddings}; use_price_reactions={use_price_reactions}"
         ),
     )
     saved_path = save_submission(
@@ -278,7 +295,7 @@ def parse_args():
     )
     parser.add_argument(
         "--aggregation",
-        choices=["session", "company_top2", "company_topk"],
+        choices=["session", "company_top2", "company_topk", "company_weighted"],
         default="session",
         help="How to aggregate headlines into session-level text documents.",
     )
@@ -333,6 +350,11 @@ def parse_args():
         action="store_true",
         help="Disable L2 normalization inside the frozen embedding encoder.",
     )
+    parser.add_argument(
+        "--use-price-reactions",
+        action="store_true",
+        help="Use seen-bar short-horizon price reactions to improve company relevance weighting.",
+    )
     return parser.parse_args()
 
 
@@ -352,6 +374,7 @@ def main():
         embedding_model=args.embedding_model,
         embedding_batch_size=args.embedding_batch_size,
         normalize_embeddings=not args.no_normalize_embeddings,
+        use_price_reactions=args.use_price_reactions,
         output_path=args.output,
         cv_only=args.cv_only,
     )

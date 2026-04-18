@@ -9,3 +9,6 @@
 | 2026-04-18 | Codex | Frozen MiniLM embeddings, session pooling on `event_normalized` | ridge text model | 2.7422 |  | Best text-only result so far. Cached by unique normalized event text. |
 | 2026-04-18 | Codex | Frozen MiniLM embeddings, company-top2 pooling on `event_normalized` | ridge text model | 1.8436 |  | Company-aware pooling underperformed simple session pooling with current relevance ranking. |
 | 2026-04-18 | Codex | Frozen MiniLM embeddings, company-top2 pooling + structured relevance features | ridge text model | 1.1608 |  | Adding current structured company features hurt further. |
+| 2026-04-18 | Codex | Frozen MiniLM embeddings, `company_weighted` pooling on `event_normalized` | ridge text model | 2.7745 |  | Best text-only result so far. Weighted company pooling beats simple session pooling. |
+| 2026-04-18 | Codex | Frozen MiniLM embeddings, `company_weighted` pooling + price-reaction-aware relevance | ridge text model | 2.7309 |  | Seen-bar price reactions did not help the weighted pool. |
+| 2026-04-18 | Codex | Frozen MiniLM embeddings, `company_top2` pooling + price-reaction-aware relevance | ridge text model | 2.5309 |  | Price reactions materially improved `company_top2`, but still underperformed `company_weighted`. |

@@ -152,6 +152,27 @@ def _weighted_group_average(
     return averaged
 
 
+def _relevance_summary_features(company_features: pd.DataFrame, *, sessions=None, top_k: int = 2) -> pd.DataFrame:
+    session_text = build_session_text_features(company_features, sessions=sessions, top_k=top_k)
+    summary_columns = [
+        "n_companies",
+        "top_company_share",
+        "top_recent_share",
+        "top1_relevance",
+        "top1_weight",
+        "top2_relevance",
+        "top2_weight",
+        "relevance_gap",
+        "weight_gap",
+        "company_entropy",
+        "relevance_entropy",
+        "company_concentration",
+        "relevance_concentration",
+    ]
+    existing_columns = [column for column in summary_columns if column in session_text.columns]
+    return session_text.reindex(columns=existing_columns).fillna(0.0)
+
+
 def build_session_embedding_features(
     events: pd.DataFrame,
     *,
@@ -209,6 +230,7 @@ def build_company_embedding_features(
     normalize_embeddings: bool = True,
     top_k: int = 2,
     include_structured: bool = False,
+    include_top_slots: bool = True,
 ) -> pd.DataFrame:
     if events.empty:
         return _empty_feature_frame(sessions=sessions)
@@ -247,17 +269,25 @@ def build_company_embedding_features(
 
     slot_columns = embedding_cols + [f"recent_{column}" for column in embedding_cols]
     slot_frames: list[pd.DataFrame] = []
-    for slot in range(1, top_k + 1):
-        slot_frame = ranked.loc[ranked["slot"] == slot, ["session"] + slot_columns].set_index("session")
-        slot_frame.columns = [f"top{slot}_{column}" for column in slot_frame.columns]
-        slot_frames.append(slot_frame)
+    if include_top_slots:
+        for slot in range(1, top_k + 1):
+            slot_frame = ranked.loc[ranked["slot"] == slot, ["session"] + slot_columns].set_index("session")
+            slot_frame.columns = [f"top{slot}_{column}" for column in slot_frame.columns]
+            slot_frames.append(slot_frame)
 
     weighted_columns = embedding_cols + [f"recent_{column}" for column in embedding_cols]
     weighted_frame = ranked[weighted_columns].mul(ranked["relevance_weight"], axis=0)
     weighted_frame["session"] = ranked["session"].to_numpy()
     weighted_embedding = weighted_frame.groupby("session", sort=True).sum().add_prefix("weighted_")
 
-    session_features = pd.concat(slot_frames + [weighted_embedding], axis=1)
+    session_parts: list[pd.DataFrame] = []
+    if slot_frames:
+        session_parts.extend(slot_frames)
+    session_parts.append(weighted_embedding)
+    if not include_top_slots:
+        session_parts.append(_relevance_summary_features(company_features, sessions=sessions, top_k=top_k))
+
+    session_features = pd.concat(session_parts, axis=1)
 
     if include_structured:
         session_features = session_features.join(
@@ -294,7 +324,7 @@ def build_embedding_feature_frame(
             include_structured=include_structured,
         )
 
-    if aggregation in {"company_top2", "company_topk"}:
+    if aggregation in {"company_top2", "company_topk", "company_weighted"}:
         company_top_k = 2 if aggregation == "company_top2" else top_k
         return build_company_embedding_features(
             events,
@@ -305,8 +335,9 @@ def build_embedding_feature_frame(
             normalize_embeddings=normalize_embeddings,
             top_k=company_top_k,
             include_structured=include_structured,
+            include_top_slots=aggregation != "company_weighted",
         )
 
     raise ValueError(
-        f"Unsupported aggregation={aggregation!r}. Expected one of: session, company_top2, company_topk."
+        f"Unsupported aggregation={aggregation!r}. Expected one of: session, company_top2, company_topk, company_weighted."
     )

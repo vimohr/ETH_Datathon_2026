@@ -38,7 +38,51 @@ def _resolve_text_column(text_source: str) -> str:
     return TEXT_SOURCE_COLUMNS[text_source]
 
 
-def build_headline_event_table(headlines: pd.DataFrame) -> pd.DataFrame:
+def _attach_bar_reactions(events: pd.DataFrame, bars: pd.DataFrame | None = None) -> pd.DataFrame:
+    if bars is None or bars.empty or events.empty:
+        return events
+
+    reaction_frame = bars.loc[:, ["session", "bar_ix", "close"]].copy().sort_values(["session", "bar_ix"])
+    grouped_close = reaction_frame.groupby("session", sort=False)["close"]
+    reaction_frame["close_t1"] = grouped_close.shift(-1)
+    reaction_frame["close_t2"] = grouped_close.shift(-2)
+    reaction_frame["reaction_next_return"] = reaction_frame["close_t1"].div(reaction_frame["close"]).sub(1.0)
+    reaction_frame["reaction_two_bar_return"] = reaction_frame["close_t2"].div(reaction_frame["close"]).sub(1.0)
+
+    reaction_columns = ["reaction_next_return", "reaction_two_bar_return"]
+    reaction_frame[reaction_columns] = reaction_frame[reaction_columns].fillna(0.0)
+    reaction_frame["reaction_next_abs"] = reaction_frame["reaction_next_return"].abs()
+    reaction_frame["reaction_two_bar_abs"] = reaction_frame["reaction_two_bar_return"].abs()
+
+    merged = events.merge(
+        reaction_frame[
+            [
+                "session",
+                "bar_ix",
+                "reaction_next_return",
+                "reaction_two_bar_return",
+                "reaction_next_abs",
+                "reaction_two_bar_abs",
+            ]
+        ],
+        on=["session", "bar_ix"],
+        how="left",
+    )
+    reaction_columns = [
+        "reaction_next_return",
+        "reaction_two_bar_return",
+        "reaction_next_abs",
+        "reaction_two_bar_abs",
+    ]
+    merged[reaction_columns] = merged[reaction_columns].fillna(0.0)
+
+    alignment = merged["polarity"] * merged["reaction_next_return"]
+    merged["reaction_alignment_pos"] = alignment.clip(lower=0.0)
+    merged["reaction_alignment_neg"] = (-alignment).clip(lower=0.0)
+    return merged
+
+
+def build_headline_event_table(headlines: pd.DataFrame, bars: pd.DataFrame | None = None) -> pd.DataFrame:
     if headlines.empty:
         return headlines.copy()
 
@@ -51,6 +95,8 @@ def build_headline_event_table(headlines: pd.DataFrame) -> pd.DataFrame:
     events["pct_signed"] = events["pct"] * events["polarity"]
     session_max_bar = events.groupby("session")["bar_ix"].transform("max")
     events["is_recent"] = (events["bar_ix"] >= (session_max_bar - 9)).astype(float)
+    events["recency_weight"] = np.exp((events["bar_ix"] - session_max_bar) / 8.0)
+    events = _attach_bar_reactions(events, bars=bars)
     return events
 
 
@@ -94,9 +140,10 @@ def build_company_session_features(events: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame()
 
     grouped = events.groupby(["session", "company"], sort=True)
-    features = grouped.agg(
+    agg_spec = dict(
         headline_count=("headline", "size"),
         recent_headline_count=("is_recent", "sum"),
+        recency_weight_sum=("recency_weight", "sum"),
         bar_coverage=("bar_ix", "nunique"),
         last_bar_ix=("bar_ix", "max"),
         mean_bar_ix=("bar_ix", "mean"),
@@ -113,13 +160,35 @@ def build_company_session_features(events: pd.DataFrame) -> pd.DataFrame:
         pct_signed_sum=("pct_signed", "sum"),
         has_amount_count=("has_amount", "sum"),
         has_pct_count=("has_pct", "sum"),
-    ).astype(float)
+    )
+    if "reaction_next_abs" in events.columns:
+        agg_spec.update(
+            reaction_next_abs_sum=("reaction_next_abs", "sum"),
+            reaction_two_bar_abs_sum=("reaction_two_bar_abs", "sum"),
+            reaction_next_abs_max=("reaction_next_abs", "max"),
+            reaction_alignment_pos_sum=("reaction_alignment_pos", "sum"),
+            reaction_alignment_neg_sum=("reaction_alignment_neg", "sum"),
+        )
+
+    features = grouped.agg(**agg_spec).astype(float)
 
     polarity_activity = (features["positive_count"] + features["negative_count"]).clip(lower=1.0)
     features["conflict_score"] = (
         np.minimum(features["positive_count"], features["negative_count"]) / polarity_activity
     )
     features["headline_density"] = features["headline_count"] / features["bar_coverage"].clip(lower=1.0)
+    if "reaction_next_abs_sum" in features.columns:
+        features["reaction_signal_sum"] = (
+            features["reaction_next_abs_sum"]
+            + 0.5 * features["reaction_two_bar_abs_sum"]
+            + 0.5 * features["reaction_alignment_pos_sum"]
+        )
+        reaction_alignment_total = (
+            features["reaction_alignment_pos_sum"] + features["reaction_alignment_neg_sum"]
+        ).clip(lower=1e-9)
+        features["reaction_alignment_precision"] = (
+            features["reaction_alignment_pos_sum"] / reaction_alignment_total
+        )
 
     categorical_parts = [
         _count_by_category(
@@ -160,6 +229,9 @@ def score_company_relevance(company_features: pd.DataFrame) -> pd.DataFrame:
     scored["mention_share"] = scored["headline_count"] / session_level["headline_count"].transform("sum").clip(
         lower=1.0
     )
+    scored["recency_weight_share"] = scored["recency_weight_sum"] / session_level["recency_weight_sum"].transform(
+        "sum"
+    ).clip(lower=1e-9)
     scored["recent_share"] = scored["recent_headline_count"] / session_level["recent_headline_count"].transform(
         "sum"
     ).clip(lower=1.0)
@@ -169,11 +241,38 @@ def score_company_relevance(company_features: pd.DataFrame) -> pd.DataFrame:
     scored["last_bar_ix_norm"] = scored["last_bar_ix"] / session_level["last_bar_ix"].transform("max").clip(
         lower=1.0
     )
+    scored["signal_strength"] = (
+        0.50 * np.log1p(scored["amount_sum_m"].clip(lower=0.0))
+        + 0.75 * scored["pct_abs_sum"]
+        + scored["polarity_abs_sum"]
+        + 0.25 * scored["has_amount_count"]
+        + 0.25 * scored["has_pct_count"]
+    )
+    scored["signal_share"] = scored["signal_strength"] / session_level["signal_strength"].transform("sum").clip(
+        lower=1e-9
+    )
+    if "reaction_signal_sum" in scored.columns:
+        scored["reaction_share"] = scored["reaction_signal_sum"] / session_level["reaction_signal_sum"].transform(
+            "sum"
+        ).clip(lower=1e-9)
+        scored["alignment_precision"] = scored["reaction_alignment_precision"].clip(lower=0.0, upper=1.0)
+    else:
+        scored["reaction_share"] = 0.0
+        scored["alignment_precision"] = 0.5
+
+    scored["relevance_score_base"] = (
+        0.20 * scored["mention_share"]
+        + 0.18 * scored["recent_share"]
+        + 0.14 * scored["recency_weight_share"]
+        + 0.10 * scored["bar_coverage_share"]
+        + 0.08 * scored["last_bar_ix_norm"]
+        + 0.15 * scored["signal_share"]
+        + 0.15 * scored["reaction_share"]
+    )
     scored["relevance_score"] = (
-        0.35 * scored["mention_share"]
-        + 0.30 * scored["recent_share"]
-        + 0.20 * scored["bar_coverage_share"]
-        + 0.15 * scored["last_bar_ix_norm"]
+        scored["relevance_score_base"]
+        * (0.90 + 0.20 * scored["alignment_precision"])
+        * (1.0 - 0.20 * scored["conflict_score"])
     )
     score_shift = scored["relevance_score"] - session_level["relevance_score"].transform("max")
     score_exp = np.exp(score_shift)
@@ -395,6 +494,7 @@ def build_company_text_documents(
 def build_text_feature_frame(
     headlines: pd.DataFrame,
     *,
+    bars: pd.DataFrame | None = None,
     sessions=None,
     text_source: str = "event_normalized",
     aggregation: str = "session",
@@ -404,7 +504,7 @@ def build_text_feature_frame(
     if headlines.empty:
         return _empty_feature_frame(sessions=sessions)
 
-    events = build_headline_event_table(headlines)
+    events = build_headline_event_table(headlines, bars=bars)
 
     if aggregation == "session":
         text_features = build_session_text_documents(events, sessions=sessions, text_source=text_source)
