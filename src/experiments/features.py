@@ -182,7 +182,8 @@ class PriceTechnicalFeatureBlock(BaseFeatureBlock):
 class HeadlineParserFeatureBlock(BaseFeatureBlock):
     def transform(self, *, bars: pd.DataFrame, headlines: pd.DataFrame, sessions) -> pd.DataFrame:
         session_headlines = _filter_sessions(headlines, sessions)
-        return build_headline_features(session_headlines, sessions=sessions).fillna(0.0).sort_index()
+        session_bars = _filter_sessions(bars, sessions)
+        return build_headline_features(session_headlines, sessions=sessions, bars=session_bars).fillna(0.0).sort_index()
 
 
 def _tokenize(text: str, ngram_range: tuple[int, int]) -> list[str]:
@@ -372,7 +373,7 @@ class HeadlineTfidfFeatureBlock(_DocumentFrameTfidfFeatureBlock):
     def _build_document_frame(self, *, bars: pd.DataFrame, headlines: pd.DataFrame, sessions) -> pd.DataFrame:
         documents = _build_session_documents(headlines, sessions=sessions, text_source=self.text_source).to_frame("session_text")
         if self.include_numeric:
-            documents = documents.join(build_headline_features(headlines, sessions=sessions), how="left")
+            documents = documents.join(build_headline_features(headlines, sessions=sessions, bars=bars), how="left")
         return _fill_mixed_feature_frame(documents).sort_index()
 
 

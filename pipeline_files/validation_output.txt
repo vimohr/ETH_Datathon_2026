@@ -1,0 +1,20 @@
+Features: 20 | Train: 800 | Val: 200
+  Training 🥇 Deep(8,4) do=0.3 wd=0.15... done (1.1s)
+  Training 🥈 Bottle(3,20) do=0.3 wd=0.15... done (0.2s)
+  Training 🥉 Shallow(12) do=0.4 wd=0.15... done (0.2s)
+  Training #4 Deep(16,4) do=0.4 wd=0.2... done (0.1s)
+  Training #5 Bottle(5,16) do=0.4 wd=0.15... done (0.2s)
+  Training Linear Ridge... done (0.0s)
+  Training Ensemble Top-5... done (1.1s)
+
+======================================================================
+FINAL VALIDATED LEADERBOARD
+======================================================================
+  +2.9759 val | +2.7148 train | -0.2611 gap | 🥇 Deep(8,4) do=0.3 wd=0.15
+  +2.9756 val | +2.7143 train | -0.2614 gap | 🥈 Bottle(3,20) do=0.3 wd=0.15
+  +2.9174 val | +2.6526 train | -0.2648 gap | #4 Deep(16,4) do=0.4 wd=0.2
+  +2.4685 val | +3.2351 train | +0.7666 gap | Ensemble Top-5
+  +1.6010 val | +4.6619 train | +3.0609 gap | 🥉 Shallow(12) do=0.4 wd=0.15
+  +0.9827 val | +2.3555 train | +1.3729 gap | Linear Ridge
+  -2.2346 val | -0.2690 train | +1.9656 gap | #5 Bottle(5,16) do=0.4 wd=0.15
+======================================================================
