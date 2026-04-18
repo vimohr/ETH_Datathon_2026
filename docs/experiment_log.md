@@ -12,3 +12,5 @@
 | 2026-04-18 | Codex | Frozen MiniLM embeddings, `company_weighted` pooling on `event_normalized` | ridge text model | 2.7745 |  | Best text-only result so far. Weighted company pooling beats simple session pooling. |
 | 2026-04-18 | Codex | Frozen MiniLM embeddings, `company_weighted` pooling + price-reaction-aware relevance | ridge text model | 2.7309 |  | Seen-bar price reactions did not help the weighted pool. |
 | 2026-04-18 | Codex | Frozen MiniLM embeddings, `company_top2` pooling + price-reaction-aware relevance | ridge text model | 2.5309 |  | Price reactions materially improved `company_top2`, but still underperformed `company_weighted`. |
+| 2026-04-18 | Codex | Price baseline + `company_weighted` MiniLM blend | OOF position blend | 2.8558 |  | Best search: weights `{price: 0.3, textcw: 0.7}`, neutral band `0`, dispersion gamma `0`. |
+| 2026-04-18 | Codex | Price baseline + `company_weighted` MiniLM + session MiniLM blend | OOF position blend | 2.8700 |  | Best search: weights `{price: 0.2, textcw: 0.5, textsess: 0.3}`, neutral band `15`, dispersion gamma `0`. |

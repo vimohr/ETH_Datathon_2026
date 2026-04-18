@@ -76,6 +76,7 @@ def build_submission_metadata(
 def append_submission_registry(output_path: Path, metadata: dict) -> Path:
     registry_path = SUBMISSIONS_DIR / "registry.jsonl"
     registry_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path = output_path.resolve()
     record = {"submission_path": str(output_path.relative_to(ROOT)), **metadata}
     with registry_path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(record, sort_keys=True) + "\n")
@@ -89,7 +90,7 @@ def save_submission(
     metadata: dict | None = None,
     latest_alias: str | None = None,
 ) -> Path:
-    output_path = Path(output_path)
+    output_path = Path(output_path).resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     validate_submission(submission, expected_sessions=expected_sessions)
     submission.to_csv(output_path, index=False)

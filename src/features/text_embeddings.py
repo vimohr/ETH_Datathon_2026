@@ -56,7 +56,11 @@ def _save_embedding_cache(cache_path: Path, cache_frame: pd.DataFrame) -> None:
 
 def _get_encoder(model_name: str) -> SentenceTransformer:
     if model_name not in MODEL_INSTANCES:
-        MODEL_INSTANCES[model_name] = SentenceTransformer(model_name, device="cpu")
+        MODEL_INSTANCES[model_name] = SentenceTransformer(
+            model_name,
+            device="cpu",
+            local_files_only=True,
+        )
     return MODEL_INSTANCES[model_name]
 
 
