@@ -145,15 +145,25 @@ From the repo root:
 ```bash
 source .venv/bin/activate
 make cv-baseline
+make cv-text
 make baseline-public
 make baseline-private
+make text-public
+make text-private
 make combine-submission
 ```
 
-To include simple headline features in the baseline:
+To include parser-driven headline features directly in the price baseline:
 
 ```bash
 .venv/bin/python -m src.pipelines.train_baseline --test-split public_test --include-headlines
+```
+
+To run the standalone text-only pipeline:
+
+```bash
+.venv/bin/python -m src.pipelines.train_text --cv-only
+.venv/bin/python -m src.pipelines.train_text --test-split public_test
 ```
 
 ## Competition Submission Workflow

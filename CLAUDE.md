@@ -51,7 +51,8 @@ src/
     targets.py       # build_train_targets -> close_halfway, close_end, target_return
   features/
     price.py         # build_price_features (returns, vol, drawdown, trend slope, ...)
-    headlines.py     # build_headline_features (counts + simple keyword regex buckets)
+    headline_parser.py # parse_headline(s): deterministic company/event/topic/geo/amount parsing
+    headlines.py     # parser-driven event table, company aggregation, relevance-weighted session features
   models/
     baseline.py      # LinearBaselineModel (np.linalg.lstsq, residual-std uncertainty)
     uncertainty.py   # size_positions: score = mu/sigma, percentile-normalized, clipped to ±POSITION_CLIP
@@ -59,7 +60,8 @@ src/
     metrics.py       # pnl, sharpe_from_positions
     validation.py    # run_cross_validation -> (fold_summary, oof_predictions)
   pipelines/
-    train_baseline.py  # the entry point invoked by the Makefile
+    train_baseline.py  # price-first baseline pipeline
+    train_text.py      # parser-driven text-only baseline pipeline
 ```
 
 Legacy / scratch (do not extend, treat as references): `baseline_model.py`, `examine_data.py`, `generate_notebook.py`, `analyze_data.ipynb`, `eda.ipynb`, root-level `submission.csv`.
@@ -96,11 +98,17 @@ make baseline-private
 make combine-submission
 make kaggle-submit SUBMISSION_MESSAGE="your message"
 make kaggle-status
+make cv-text
+make text-public
+make text-private
 
 # Native Windows (PowerShell or cmd) — call the module directly:
 .venv\Scripts\python.exe -m src.pipelines.train_baseline --cv-only
 .venv\Scripts\python.exe -m src.pipelines.train_baseline --test-split public_test
 .venv\Scripts\python.exe -m src.pipelines.train_baseline --test-split private_test
+.venv\Scripts\python.exe -m src.pipelines.train_text --cv-only
+.venv\Scripts\python.exe -m src.pipelines.train_text --test-split public_test
+.venv\Scripts\python.exe -m src.pipelines.train_text --test-split private_test
 .venv\Scripts\python.exe -m src.pipelines.competition combine
 .venv\Scripts\python.exe -m src.pipelines.competition submit --message "your message"
 .venv\Scripts\python.exe -m src.pipelines.competition status
@@ -111,6 +119,8 @@ CLI flags on `train_baseline`:
 - `--test-split {public_test,private_test}` — which split to score.
 - `--include-headlines` — join headline features (Make targets do **not** pass this; use the module call).
 - `--output PATH` — override submission path; default is `outputs/submissions/{timestamp}_{model_name}_{split}.csv`.
+
+`train_text` mirrors the same `--cv-only`, `--test-split`, and `--output` flow, but uses the parser-driven text pipeline only.
 
 Competition submission rules:
 - Kaggle expects one uploaded CSV with `20000` rows: `10000` public-test sessions (`1000..10999`) plus `10000` private-test sessions (`11000..20999`).
@@ -124,7 +134,7 @@ Competition submission rules:
 - **Validation > public LB.** `challenge_guide.md` says the public leaderboard should be *deprioritized*. Trust 5-fold CV Sharpe; only one shot on private LB.
 - **Reproducibility:** seed everything from `src.settings.RANDOM_SEED`. CV folds are seeded (`RANDOM_SEED=42`).
 - **Position scale doesn't change Sharpe.** Don't tune `POSITION_CLIP` for score; tune it only if a downstream consumer cares.
-- **Headlines are noisy.** Many headlines in a session are irrelevant. Filtering / relevance scoring is an open problem — don't assume keyword counts are signal without checking CV.
+- **Headlines are noisy.** Many headlines in a session are irrelevant. The current text pipeline is parser-driven and company-aware, but relevance scoring is still heuristic — treat it as a baseline, not solved ground truth.
 
 ## Logging experiments
 
