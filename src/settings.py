@@ -1,0 +1,9 @@
+RANDOM_SEED = 42
+CV_FOLDS = 5
+ANNUALIZATION_FACTOR = 16.0
+
+# Sharpe is invariant to global scaling, so clip positions to keep them stable.
+POSITION_CLIP = 100.0
+POSITION_SCORE_PERCENTILE = 90.0
+MIN_SCORE_DENOMINATOR = 1e-6
+NEUTRAL_BAND = 0.0

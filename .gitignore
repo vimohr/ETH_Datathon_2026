@@ -211,3 +211,13 @@ data/global_subnational_population_stat/cod_population_admin2.csv
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Hackathon outputs
+outputs/models/*
+outputs/oof/*
+outputs/figures/*
+outputs/submissions/*
+!outputs/models/.gitkeep
+!outputs/oof/.gitkeep
+!outputs/figures/.gitkeep
+!outputs/submissions/.gitkeep

@@ -100,3 +100,49 @@ import pandas as pd
 seen_train_bars = pd.read_parquet("data/bars_seen_train.parquet")
 # etc.
 ```
+
+## Working Structure
+
+For the hackathon, use the modular workflow under `src/` and `outputs/`.
+The existing root-level scripts and notebook are still available as legacy references.
+
+- `src/data/`: parquet loading, target construction, CV folds
+- `src/features/`: price and headline feature builders
+- `src/models/`: return models and uncertainty-based sizing
+- `src/evaluation/`: Sharpe and cross-validation helpers
+- `src/pipelines/`: runnable training / submission entry points
+- `outputs/submissions/`: generated CSV files for upload
+- `outputs/oof/`: out-of-fold predictions for blending and diagnostics
+
+The submission flow now also writes:
+
+- a versioned submission filename
+- a sidecar JSON metadata file
+- `outputs/submissions/latest_<split>.csv` as the current handoff artifact
+- `outputs/submissions/registry.jsonl` as a simple audit trail
+
+## Verified Split
+
+The parquet files use an exact halfway split:
+
+- seen bars: `bar_ix 0..49`
+- unseen training bars: `bar_ix 50..99`
+
+That means positions are effectively taken at the close of bar `49` and held to the close of bar `99`.
+
+## Quickstart
+
+From the repo root:
+
+```bash
+source .venv/bin/activate
+make cv-baseline
+make baseline-public
+make baseline-private
+```
+
+To include simple headline features in the baseline:
+
+```bash
+.venv/bin/python -m src.pipelines.train_baseline --test-split public_test --include-headlines
+```
