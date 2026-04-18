@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from src.settings import CV_FOLDS, RANDOM_SEED
+from src.settings import CV_FOLDS, CV_REPEATS, RANDOM_SEED
 
 
 @dataclass(frozen=True)
@@ -29,7 +29,9 @@ class ExperimentConfig:
     feature_blocks: tuple[FeatureSpec, ...]
     model: ModelSpec
     cv_folds: int = CV_FOLDS
+    cv_repeats: int = CV_REPEATS
     seed: int = RANDOM_SEED
+    position_sizing: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -47,7 +49,9 @@ class ExperimentConfig:
                 "params": self.model.params,
             },
             "cv_folds": self.cv_folds,
+            "cv_repeats": self.cv_repeats,
             "seed": self.seed,
+            "position_sizing": self.position_sizing,
         }
 
     def to_json(self) -> str:
@@ -92,7 +96,9 @@ def experiment_config_from_dict(payload: dict[str, Any]) -> ExperimentConfig:
         feature_blocks=feature_specs,
         model=_as_model_spec(dict(payload["model"])),
         cv_folds=int(payload.get("cv_folds", CV_FOLDS)),
+        cv_repeats=int(payload.get("cv_repeats", CV_REPEATS)),
         seed=int(payload.get("seed", RANDOM_SEED)),
+        position_sizing=dict(payload.get("position_sizing") or {}),
     )
 
 

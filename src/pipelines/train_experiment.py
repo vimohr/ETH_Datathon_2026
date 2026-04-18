@@ -1,4 +1,5 @@
 import argparse
+from dataclasses import replace
 from pathlib import Path
 
 from src.experiments.catalog import FEATURE_BLOCK_CATALOG, MODEL_CATALOG, format_catalog
@@ -31,6 +32,12 @@ def parse_args():
         "--cv-only",
         action="store_true",
         help="Run cross-validation and write OOF predictions without fitting on all data.",
+    )
+    parser.add_argument(
+        "--cv-repeats",
+        type=int,
+        default=None,
+        help="Override the config's repeated-CV count.",
     )
     parser.add_argument(
         "--competition",
@@ -110,6 +117,8 @@ def main():
         return
 
     config = load_experiment_config(args.config)
+    if args.cv_repeats is not None:
+        config = replace(config, cv_repeats=int(args.cv_repeats))
     if args.competition:
         run_experiment_competition_pipeline(
             config,

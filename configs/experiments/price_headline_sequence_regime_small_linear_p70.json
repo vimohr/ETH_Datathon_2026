@@ -1,0 +1,28 @@
+{
+  "experiment_name": "price_headline_sequence_regime_small_linear_p70",
+  "feature_blocks": [
+    {
+      "name": "price"
+    },
+    {
+      "name": "headline_sequence"
+    },
+    {
+      "name": "headline_regime_context",
+      "params": {
+        "include_columns": [
+          "weighted_vol_scaled_polarity_3_mean",
+          "weighted_vol_scaled_polarity_5_mean"
+        ]
+      }
+    }
+  ],
+  "model": {
+    "name": "linear"
+  },
+  "cv_repeats": 10,
+  "position_sizing": {
+    "percentile": 70.0,
+    "neutral_band": 0.0
+  }
+}

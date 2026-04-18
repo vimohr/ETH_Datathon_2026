@@ -1,0 +1,15 @@
+{
+  "experiment_name": "price_headline_sequence_linear",
+  "feature_blocks": [
+    {
+      "name": "price"
+    },
+    {
+      "name": "headline_sequence"
+    }
+  ],
+  "model": {
+    "name": "linear"
+  },
+  "cv_repeats": 10
+}

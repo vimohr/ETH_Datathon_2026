@@ -1,5 +1,6 @@
 RANDOM_SEED = 42
 CV_FOLDS = 5
+CV_REPEATS = 1
 ANNUALIZATION_FACTOR = 16.0
 
 # Sharpe is invariant to global scaling, so clip positions to keep them stable.

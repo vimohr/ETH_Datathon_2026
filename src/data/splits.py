@@ -19,3 +19,17 @@ def make_session_folds(sessions, n_folds: int = 5, seed: int = 42):
             [fold for index, fold in enumerate(valid_fold_sessions) if index != fold_id]
         )
         yield fold_id, pd.Index(train_sessions), pd.Index(valid_sessions)
+
+
+def make_repeated_session_folds(sessions, n_folds: int = 5, seed: int = 42, n_repeats: int = 1):
+    if n_repeats < 1:
+        raise ValueError("n_repeats must be at least 1.")
+
+    for repeat_id in range(int(n_repeats)):
+        repeat_seed = int(seed) + repeat_id
+        for fold_id, train_sessions, valid_sessions in make_session_folds(
+            sessions,
+            n_folds=n_folds,
+            seed=repeat_seed,
+        ):
+            yield repeat_id, repeat_seed, fold_id, train_sessions, valid_sessions

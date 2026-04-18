@@ -5,7 +5,7 @@ from src.experiments.config import ExperimentConfig, FeatureSpec, ModelSpec
 from src.experiments.runner import run_experiment_pipeline
 
 
-def build_baseline_config(include_headlines: bool) -> ExperimentConfig:
+def build_baseline_config(include_headlines: bool, cv_repeats: int = 1) -> ExperimentConfig:
     feature_blocks = [FeatureSpec(name="price")]
     experiment_name = "baseline_price"
 
@@ -17,6 +17,7 @@ def build_baseline_config(include_headlines: bool) -> ExperimentConfig:
         experiment_name=experiment_name,
         feature_blocks=tuple(feature_blocks),
         model=ModelSpec(name="linear"),
+        cv_repeats=int(cv_repeats),
     )
 
 
@@ -44,12 +45,18 @@ def parse_args():
         action="store_true",
         help="Run cross-validation and write OOF predictions without fitting on all data.",
     )
+    parser.add_argument(
+        "--cv-repeats",
+        type=int,
+        default=1,
+        help="How many random-seed CV repeats to run.",
+    )
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    config = build_baseline_config(include_headlines=args.include_headlines)
+    config = build_baseline_config(include_headlines=args.include_headlines, cv_repeats=args.cv_repeats)
     run_experiment_pipeline(
         config,
         test_split=args.test_split,

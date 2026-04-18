@@ -13,6 +13,8 @@ from src.features.headlines import (
     build_company_session_features,
     build_headline_event_table,
     build_headline_features,
+    build_headline_regime_context_features,
+    build_session_sequence_features,
     build_session_text_features,
     score_company_relevance,
 )
@@ -184,6 +186,34 @@ class HeadlineParserFeatureBlock(BaseFeatureBlock):
         session_headlines = _filter_sessions(headlines, sessions)
         session_bars = _filter_sessions(bars, sessions)
         return build_headline_features(session_headlines, sessions=sessions, bars=session_bars).fillna(0.0).sort_index()
+
+
+class HeadlineSequenceFeatureBlock(BaseFeatureBlock):
+    def transform(self, *, bars: pd.DataFrame, headlines: pd.DataFrame, sessions) -> pd.DataFrame:
+        session_headlines = _filter_sessions(headlines, sessions)
+        events = build_headline_event_table(session_headlines)
+        return build_session_sequence_features(events, sessions=sessions).fillna(0.0).sort_index()
+
+
+class HeadlineRegimeContextFeatureBlock(BaseFeatureBlock):
+    def __init__(self, include_columns: list[str] | None = None) -> None:
+        self.include_columns = list(include_columns) if include_columns else None
+
+    def transform(self, *, bars: pd.DataFrame, headlines: pd.DataFrame, sessions) -> pd.DataFrame:
+        session_headlines = _filter_sessions(headlines, sessions)
+        session_bars = _filter_sessions(bars, sessions)
+        events = build_headline_event_table(session_headlines)
+        company_features = score_company_relevance(build_company_session_features(events))
+        feature_frame = build_headline_regime_context_features(
+            events,
+            company_features,
+            session_bars,
+            sessions=sessions,
+        ).fillna(0.0).sort_index()
+        if self.include_columns is None:
+            return feature_frame
+        existing_columns = [column for column in self.include_columns if column in feature_frame.columns]
+        return feature_frame.reindex(columns=existing_columns, fill_value=0.0)
 
 
 def _tokenize(text: str, ngram_range: tuple[int, int]) -> list[str]:
@@ -453,6 +483,15 @@ def build_feature_block(spec: FeatureSpec) -> BaseFeatureBlock:
 
     if spec.name == "headline_parser":
         return HeadlineParserFeatureBlock()
+
+    if spec.name == "headline_sequence":
+        return HeadlineSequenceFeatureBlock()
+
+    if spec.name == "headline_regime_context":
+        include_columns = spec.params.get("include_columns")
+        if include_columns is not None and not isinstance(include_columns, list):
+            raise ValueError("headline_regime_context include_columns must be a list when provided.")
+        return HeadlineRegimeContextFeatureBlock(include_columns=include_columns)
 
     if spec.name == "headline_tfidf":
         ngram_max = int(spec.params.get("ngram_max", 2))

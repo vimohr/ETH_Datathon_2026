@@ -664,6 +664,168 @@ def build_headline_price_interaction_features(
     return features.fillna(0.0)
 
 
+def build_headline_regime_context_features(
+    events: pd.DataFrame,
+    company_features: pd.DataFrame,
+    bars: pd.DataFrame,
+    sessions=None,
+) -> pd.DataFrame:
+    if events.empty or bars.empty:
+        return _empty_feature_frame(sessions=sessions)
+
+    bars_sorted = bars.sort_values(["session", "bar_ix"]).copy()
+    bar_grouped = bars_sorted.groupby("session", sort=True)
+    bars_sorted["bar_return"] = bar_grouped["close"].pct_change().fillna(0.0)
+    bars_sorted["intrabar_range_ratio"] = (
+        (bars_sorted["high"] - bars_sorted["low"]) / bars_sorted["open"].clip(lower=1e-6)
+    )
+
+    previous_close = bar_grouped["close"].shift(1)
+    previous_close_max = bar_grouped["close"].cummax().groupby(bars_sorted["session"]).shift(1)
+    bars_sorted["pre_event_drawdown"] = np.divide(
+        previous_close,
+        previous_close_max.clip(lower=1e-6),
+    ) - 1.0
+
+    for lookback in (1, 3, 5):
+        start_close = bar_grouped["close"].shift(lookback + 1)
+        bars_sorted[f"pre_event_return_{lookback}"] = np.divide(
+            previous_close - start_close,
+            start_close.clip(lower=1e-6),
+        )
+
+    previous_return = bar_grouped["bar_return"].shift(1)
+    previous_range = bar_grouped["intrabar_range_ratio"].shift(1)
+    for window in (3, 5):
+        bars_sorted[f"pre_event_vol_{window}"] = (
+            previous_return.groupby(bars_sorted["session"], sort=False)
+            .rolling(window=window, min_periods=1)
+            .std(ddof=0)
+            .reset_index(level=0, drop=True)
+        )
+        bars_sorted[f"pre_event_range_{window}"] = (
+            previous_range.groupby(bars_sorted["session"], sort=False)
+            .rolling(window=window, min_periods=1)
+            .mean()
+            .reset_index(level=0, drop=True)
+        )
+
+    context_columns = [
+        "pre_event_return_1",
+        "pre_event_return_3",
+        "pre_event_return_5",
+        "pre_event_vol_3",
+        "pre_event_vol_5",
+        "pre_event_range_3",
+        "pre_event_range_5",
+        "pre_event_drawdown",
+    ]
+    event_frame = events.merge(
+        bars_sorted[["session", "bar_ix"] + context_columns],
+        on=["session", "bar_ix"],
+        how="left",
+    )
+    event_frame = event_frame.merge(
+        company_features.reset_index()[["session", "company", "relevance_weight", "relevance_rank"]],
+        on=["session", "company"],
+        how="left",
+    ).fillna({"relevance_weight": 0.0, "relevance_rank": 0.0})
+
+    for lookback in (1, 3, 5):
+        event_frame[f"contrarian_return_{lookback}"] = (
+            -event_frame["polarity"].astype(float) * event_frame[f"pre_event_return_{lookback}"].fillna(0.0)
+        )
+    for window in (3, 5):
+        event_frame[f"vol_scaled_polarity_{window}"] = np.divide(
+            event_frame["polarity"].astype(float),
+            event_frame[f"pre_event_vol_{window}"].fillna(0.0).clip(lower=1e-6),
+        )
+    event_frame["drawdown_contrarian"] = (
+        -event_frame["polarity"].astype(float) * event_frame["pre_event_drawdown"].fillna(0.0)
+    )
+
+    rows: list[dict[str, float]] = []
+    for session, session_events in event_frame.groupby("session", sort=True):
+        active_events = session_events.loc[session_events["polarity"] != 0].copy()
+        if active_events.empty:
+            rows.append(
+                {
+                    "session": int(session),
+                    "pre_event_return_1_mean": 0.0,
+                    "pre_event_return_3_mean": 0.0,
+                    "pre_event_return_5_mean": 0.0,
+                    "pre_event_vol_3_mean": 0.0,
+                    "pre_event_vol_5_mean": 0.0,
+                    "pre_event_range_3_mean": 0.0,
+                    "pre_event_range_5_mean": 0.0,
+                    "pre_event_drawdown_mean": 0.0,
+                    "weighted_pre_event_return_3_mean": 0.0,
+                    "weighted_pre_event_return_5_mean": 0.0,
+                    "weighted_pre_event_vol_3_mean": 0.0,
+                    "weighted_pre_event_vol_5_mean": 0.0,
+                    "weighted_contrarian_return_3_mean": 0.0,
+                    "weighted_contrarian_return_5_mean": 0.0,
+                    "weighted_drawdown_contrarian_mean": 0.0,
+                    "weighted_vol_scaled_polarity_3_mean": 0.0,
+                    "weighted_vol_scaled_polarity_5_mean": 0.0,
+                    "positive_pre_event_return_3_mean": 0.0,
+                    "negative_pre_event_return_3_mean": 0.0,
+                    "positive_pre_event_drawdown_mean": 0.0,
+                    "negative_pre_event_drawdown_mean": 0.0,
+                }
+            )
+            continue
+
+        active_weights = active_events["relevance_weight"].to_numpy(dtype=float)
+        weight_sum = float(active_weights.sum())
+
+        def _weighted_mean(column: str) -> float:
+            values = active_events[column].fillna(0.0).to_numpy(dtype=float)
+            if weight_sum <= 0.0:
+                return float(values.mean()) if len(values) else 0.0
+            return float(np.dot(values, active_weights) / weight_sum)
+
+        rows.append(
+            {
+                "session": int(session),
+                "pre_event_return_1_mean": float(active_events["pre_event_return_1"].fillna(0.0).mean()),
+                "pre_event_return_3_mean": float(active_events["pre_event_return_3"].fillna(0.0).mean()),
+                "pre_event_return_5_mean": float(active_events["pre_event_return_5"].fillna(0.0).mean()),
+                "pre_event_vol_3_mean": float(active_events["pre_event_vol_3"].fillna(0.0).mean()),
+                "pre_event_vol_5_mean": float(active_events["pre_event_vol_5"].fillna(0.0).mean()),
+                "pre_event_range_3_mean": float(active_events["pre_event_range_3"].fillna(0.0).mean()),
+                "pre_event_range_5_mean": float(active_events["pre_event_range_5"].fillna(0.0).mean()),
+                "pre_event_drawdown_mean": float(active_events["pre_event_drawdown"].fillna(0.0).mean()),
+                "weighted_pre_event_return_3_mean": _weighted_mean("pre_event_return_3"),
+                "weighted_pre_event_return_5_mean": _weighted_mean("pre_event_return_5"),
+                "weighted_pre_event_vol_3_mean": _weighted_mean("pre_event_vol_3"),
+                "weighted_pre_event_vol_5_mean": _weighted_mean("pre_event_vol_5"),
+                "weighted_contrarian_return_3_mean": _weighted_mean("contrarian_return_3"),
+                "weighted_contrarian_return_5_mean": _weighted_mean("contrarian_return_5"),
+                "weighted_drawdown_contrarian_mean": _weighted_mean("drawdown_contrarian"),
+                "weighted_vol_scaled_polarity_3_mean": _weighted_mean("vol_scaled_polarity_3"),
+                "weighted_vol_scaled_polarity_5_mean": _weighted_mean("vol_scaled_polarity_5"),
+                "positive_pre_event_return_3_mean": float(
+                    active_events.loc[active_events["polarity"] > 0.0, "pre_event_return_3"].fillna(0.0).mean()
+                ),
+                "negative_pre_event_return_3_mean": float(
+                    active_events.loc[active_events["polarity"] < 0.0, "pre_event_return_3"].fillna(0.0).mean()
+                ),
+                "positive_pre_event_drawdown_mean": float(
+                    active_events.loc[active_events["polarity"] > 0.0, "pre_event_drawdown"].fillna(0.0).mean()
+                ),
+                "negative_pre_event_drawdown_mean": float(
+                    active_events.loc[active_events["polarity"] < 0.0, "pre_event_drawdown"].fillna(0.0).mean()
+                ),
+            }
+        )
+
+    features = pd.DataFrame(rows).set_index("session").sort_index()
+    if sessions is not None:
+        features = features.reindex(sorted(pd.Index(sessions).unique()))
+    return features.fillna(0.0)
+
+
 def build_headline_features(headlines: pd.DataFrame, sessions=None, bars: pd.DataFrame | None = None) -> pd.DataFrame:
     if headlines.empty:
         return _empty_feature_frame(sessions=sessions)

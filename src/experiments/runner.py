@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.data.load import load_bars, load_headlines, load_train_bars
-from src.data.splits import make_session_folds
+from src.data.splits import make_repeated_session_folds
 from src.data.targets import build_train_targets
 from src.evaluation.metrics import pnl, sharpe_from_positions
 from src.experiments.config import ExperimentConfig
@@ -38,6 +38,24 @@ class CompetitionArtifacts:
     kaggle_response: str | None = None
 
 
+def _aggregate_repeated_oof_predictions(oof_predictions: pd.DataFrame) -> pd.DataFrame:
+    if oof_predictions.empty or not oof_predictions.index.has_duplicates:
+        return oof_predictions.sort_index()
+
+    grouped = oof_predictions.groupby(level=0, sort=True)
+    aggregated = pd.DataFrame(
+        {
+            "predicted_return": grouped["predicted_return"].mean(),
+            "predicted_uncertainty": grouped["predicted_uncertainty"].mean(),
+            "target_position": grouped["target_position"].mean(),
+            "realized_return": grouped["realized_return"].first(),
+            "cv_prediction_count": grouped.size().astype(float),
+        }
+    )
+    aggregated["pnl"] = aggregated["target_position"] * aggregated["realized_return"]
+    return aggregated.sort_index()
+
+
 def _filter_sessions(frame: pd.DataFrame, sessions) -> pd.DataFrame:
     if frame.empty:
         return frame.copy()
@@ -64,6 +82,15 @@ def _config_notes(config: ExperimentConfig) -> str:
     return config.to_json()
 
 
+def _size_positions_for_config(
+    config: ExperimentConfig,
+    predicted_return: pd.Series,
+    predicted_uncertainty: pd.Series,
+) -> pd.Series:
+    position_kwargs = dict(config.position_sizing)
+    return size_positions(predicted_return, predicted_uncertainty, **position_kwargs)
+
+
 def _save_training_outputs(config: ExperimentConfig, training: TrainingArtifacts) -> Path:
     oof_path = OOF_DIR / f"{config.experiment_name}_oof.csv"
     training.oof_predictions.to_csv(oof_path, index_label="session")
@@ -73,8 +100,20 @@ def _save_training_outputs(config: ExperimentConfig, training: TrainingArtifacts
 
 def _run_training(config: ExperimentConfig) -> TrainingArtifacts:
     training = cross_validate_experiment(config)
-    print(training.fold_summary.to_string(index=False))
-    print(f"Mean CV Sharpe: {training.fold_summary['sharpe'].mean():.4f}")
+    if config.cv_repeats > 1:
+        repeat_summary = (
+            training.fold_summary.groupby(["repeat", "seed"], sort=True)["sharpe"]
+            .mean()
+            .reset_index(name="mean_sharpe")
+        )
+        print(repeat_summary.to_string(index=False))
+        print(
+            "Repeated CV Sharpe: "
+            f"{repeat_summary['mean_sharpe'].mean():.4f} +/- {repeat_summary['mean_sharpe'].std(ddof=0):.4f}"
+        )
+    else:
+        print(training.fold_summary.to_string(index=False))
+        print(f"Mean CV Sharpe: {training.fold_summary['sharpe'].mean():.4f}")
     _save_training_outputs(config, training)
     return training
 
@@ -87,8 +126,11 @@ def cross_validate_experiment(config: ExperimentConfig) -> TrainingArtifacts:
     oof_frames: list[pd.DataFrame] = []
     last_feature_count = 0
 
-    for fold_id, train_sessions, valid_sessions in make_session_folds(
-        all_sessions, n_folds=config.cv_folds, seed=config.seed
+    for repeat_id, repeat_seed, fold_id, train_sessions, valid_sessions in make_repeated_session_folds(
+        all_sessions,
+        n_folds=config.cv_folds,
+        seed=config.seed,
+        n_repeats=config.cv_repeats,
     ):
         train_bars = _filter_sessions(train_seen_bars, train_sessions)
         valid_bars = _filter_sessions(train_seen_bars, valid_sessions)
@@ -119,13 +161,15 @@ def cross_validate_experiment(config: ExperimentConfig) -> TrainingArtifacts:
         model = build_model(config.model).fit(train_features, train_target)
         predicted_return = model.predict_expected_return(valid_features)
         predicted_uncertainty = model.predict_uncertainty(valid_features)
-        target_position = size_positions(predicted_return, predicted_uncertainty)
+        target_position = _size_positions_for_config(config, predicted_return, predicted_uncertainty)
         fold_pnl = pnl(target_position, valid_target)
         fold_sharpe = sharpe_from_positions(target_position, valid_target)
 
         last_feature_count = int(train_features.shape[1])
         fold_rows.append(
             {
+                "repeat": float(repeat_id),
+                "seed": float(repeat_seed),
                 "fold": float(fold_id),
                 "n_train": float(len(train_sessions)),
                 "n_valid": float(len(valid_sessions)),
@@ -141,14 +185,17 @@ def cross_validate_experiment(config: ExperimentConfig) -> TrainingArtifacts:
                     "target_position": target_position,
                     "realized_return": valid_target,
                     "pnl": fold_pnl,
+                    "repeat": repeat_id,
+                    "seed": repeat_seed,
                     "fold": fold_id,
                 }
             )
         )
 
+    oof_predictions = _aggregate_repeated_oof_predictions(pd.concat(oof_frames).sort_index())
     return TrainingArtifacts(
         fold_summary=pd.DataFrame(fold_rows),
-        oof_predictions=pd.concat(oof_frames).sort_index(),
+        oof_predictions=oof_predictions,
         train_feature_count=last_feature_count,
     )
 
@@ -191,7 +238,7 @@ def predict_split_with_model(
     )
     predicted_return = model.predict_expected_return(test_features)
     predicted_uncertainty = model.predict_uncertainty(test_features)
-    target_position = size_positions(predicted_return, predicted_uncertainty)
+    target_position = _size_positions_for_config(config, predicted_return, predicted_uncertainty)
     submission = build_submission(test_features.index, target_position)
     return submission, feature_count
 
