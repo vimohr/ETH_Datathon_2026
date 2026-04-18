@@ -211,6 +211,7 @@ data/global_subnational_population_stat/cod_population_admin2.csv
 
 # Claude Code local settings
 .claude/settings.local.json
+.codex/
 
 # Hackathon outputs
 outputs/models/*
