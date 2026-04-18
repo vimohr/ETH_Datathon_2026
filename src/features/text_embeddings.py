@@ -21,6 +21,20 @@ TEXT_SOURCE_COLUMNS = {
 
 MODEL_INSTANCES: dict[str, object] = {}
 SAFE_NAME_PATTERN = re.compile(r"[^A-Za-z0-9._-]+")
+# Default multi-block feature map used when the caller wants one combined
+# session-level text matrix without managing prefixes manually.
+DEFAULT_EMBEDDING_BLOCKS = (
+    {
+        "name": "text_cw_event_norm",
+        "text_source": "event_normalized",
+        "aggregation": "company_weighted",
+    },
+    {
+        "name": "text_session_event_norm",
+        "text_source": "event_normalized",
+        "aggregation": "session",
+    },
+)
 
 
 def _empty_feature_frame(sessions=None) -> pd.DataFrame:
@@ -292,6 +306,12 @@ def build_text_embedding_features(
     normalize_embeddings: bool = True,
     include_relevance_summary: bool = True,
 ) -> pd.DataFrame:
+    """Build one session-level text embedding feature block from raw headlines.
+
+    This is the low-level entrypoint used when the caller wants one specific
+    embedding family, for example `company_weighted` on `event_normalized`.
+    The returned frame is numeric-only and indexed by `session`.
+    """
     if headlines.empty:
         return _empty_feature_frame(sessions=sessions)
 
@@ -319,3 +339,51 @@ def build_text_embedding_features(
     raise ValueError(
         f"Unsupported aggregation={aggregation!r}. Expected one of: company_weighted, session."
     )
+
+
+def build_text_embedding_feature_map(
+    headlines: pd.DataFrame,
+    *,
+    sessions=None,
+    blocks: list[dict] | tuple[dict, ...] | None = None,
+) -> pd.DataFrame:
+    """Build and join multiple prefixed text embedding blocks.
+
+    Each block is a dict with at least:
+    - `name`: prefix used for all columns in that block
+    - `text_source`: one of TEXT_SOURCE_COLUMNS
+    - `aggregation`: `company_weighted` or `session`
+
+    The result is a single numeric feature map that can be handed directly to
+    the existing model pipeline on `main`.
+    """
+    block_specs = list(blocks or DEFAULT_EMBEDDING_BLOCKS)
+    if not block_specs:
+        return _empty_feature_frame(sessions=sessions)
+
+    feature_blocks: list[pd.DataFrame] = []
+    seen_names: set[str] = set()
+    for block in block_specs:
+        block_name = str(block.get("name") or "").strip()
+        if not block_name:
+            raise ValueError("Each embedding block must include a non-empty 'name'.")
+        if block_name in seen_names:
+            raise ValueError(f"Duplicate embedding block name: {block_name!r}")
+        seen_names.add(block_name)
+
+        feature_frame = build_text_embedding_features(
+            headlines,
+            sessions=sessions,
+            text_source=block.get("text_source", "event_normalized"),
+            aggregation=block.get("aggregation", "company_weighted"),
+            model_name=block.get("model_name", "sentence-transformers/all-MiniLM-L6-v2"),
+            batch_size=int(block.get("batch_size", 128)),
+            normalize_embeddings=bool(block.get("normalize_embeddings", True)),
+            include_relevance_summary=bool(block.get("include_relevance_summary", True)),
+        ).add_prefix(f"{block_name}__")
+        feature_blocks.append(feature_frame)
+
+    combined = pd.concat(feature_blocks, axis=1)
+    if sessions is not None:
+        combined = combined.reindex(sorted(pd.Index(sessions).unique()))
+    return combined.fillna(0.0).sort_index()
