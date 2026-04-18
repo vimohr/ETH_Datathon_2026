@@ -155,6 +155,7 @@ DEFAULT_POLARITY_BY_VERB = {
 
 AMOUNT_PATTERN = re.compile(r"\$(\d+(?:\.\d+)?)([MB])")
 PERCENT_PATTERN = re.compile(r"(\d+(?:\.\d+)?)%")
+TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 
 
 def _extract_company_and_body(headline: str) -> tuple[str, str]:
@@ -204,6 +205,14 @@ def _first_match(text: str, candidates: list[str]) -> str:
     return "none"
 
 
+def _normalize_text(text: str) -> str:
+    normalized = str(text or "").lower()
+    normalized = AMOUNT_PATTERN.sub(" amount_token ", normalized)
+    normalized = PERCENT_PATTERN.sub(" pct_token ", normalized)
+    tokens = TOKEN_PATTERN.findall(normalized)
+    return " ".join(tokens)
+
+
 def _classify_event(body_lower: str) -> tuple[str, str, int]:
     for event_family, verb_family, polarity, fragments in EVENT_RULES:
         if all(fragment in body_lower for fragment in fragments):
@@ -229,6 +238,9 @@ def parse_headline(headline: str) -> dict[str, object]:
     return {
         "company": company,
         "body": body,
+        "event_text": body,
+        "headline_normalized": _normalize_text(text),
+        "event_text_normalized": _normalize_text(body),
         "verb_family": verb_family,
         "event_family": event_family,
         "topic": topic,

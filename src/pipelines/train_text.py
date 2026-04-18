@@ -7,42 +7,166 @@ import pandas as pd
 from src.data.load import load_bars, load_headlines, load_train_bars
 from src.data.targets import build_train_targets
 from src.evaluation.validation import run_cross_validation
-from src.features.headlines import build_headline_features
+from src.features.headlines import build_headline_features, build_text_feature_frame
 from src.models.baseline import LinearBaselineModel
+from src.models.text_linear import RidgeTextModel
 from src.models.uncertainty import size_positions
 from src.paths import OOF_DIR, SUBMISSIONS_DIR, ensure_output_dirs
 from src.submission import build_submission, build_submission_metadata, save_submission
 
 
-def build_feature_matrix(split: str) -> pd.DataFrame:
+def _build_feature_frame(
+    headlines: pd.DataFrame,
+    *,
+    sessions,
+    feature_set: str,
+    text_source: str,
+    aggregation: str,
+    top_k: int,
+    include_structured: bool,
+) -> pd.DataFrame:
+    if feature_set == "parser":
+        return build_headline_features(headlines, sessions=sessions).fillna(0.0).sort_index()
+
+    if feature_set == "tfidf":
+        return build_text_feature_frame(
+            headlines,
+            sessions=sessions,
+            text_source=text_source,
+            aggregation=aggregation,
+            top_k=top_k,
+            include_numeric=include_structured,
+        ).sort_index()
+
+    raise ValueError(f"Unsupported feature_set={feature_set!r}.")
+
+
+def build_feature_matrix(
+    split: str,
+    *,
+    feature_set: str,
+    text_source: str,
+    aggregation: str,
+    top_k: int,
+    include_structured: bool,
+) -> pd.DataFrame:
     sessions = load_bars(split, "seen")["session"].unique()
     headlines = load_headlines(split, "seen")
-    return build_headline_features(headlines, sessions=sessions).fillna(0.0).sort_index()
+    return _build_feature_frame(
+        headlines,
+        sessions=sessions,
+        feature_set=feature_set,
+        text_source=text_source,
+        aggregation=aggregation,
+        top_k=top_k,
+        include_structured=include_structured,
+    )
 
 
-def run_pipeline(test_split: str, output_path=None, cv_only: bool = False):
+def build_model_factory(
+    *,
+    feature_set: str,
+    min_df: int,
+    max_features: int,
+    ngram_max: int,
+    ridge_alpha: float,
+):
+    if feature_set == "parser":
+        return LinearBaselineModel
+
+    return lambda: RidgeTextModel(
+        alpha=ridge_alpha,
+        min_df=min_df,
+        max_features=max_features,
+        ngram_range=(1, ngram_max),
+    )
+
+
+def build_model_name(
+    *,
+    feature_set: str,
+    text_source: str,
+    aggregation: str,
+    include_structured: bool,
+) -> str:
+    if feature_set == "parser":
+        return "text_only_parser"
+
+    name_parts = ["text_tfidf", aggregation, text_source]
+    if include_structured:
+        name_parts.append("structured")
+    return "_".join(name_parts)
+
+
+def run_pipeline(
+    test_split: str,
+    *,
+    feature_set: str,
+    text_source: str,
+    aggregation: str,
+    top_k: int,
+    include_structured: bool,
+    min_df: int,
+    max_features: int,
+    ngram_max: int,
+    ridge_alpha: float,
+    output_path=None,
+    cv_only: bool = False,
+):
     ensure_output_dirs()
 
     train_seen_bars, train_unseen_bars = load_train_bars()
     train_targets = build_train_targets(train_seen_bars, train_unseen_bars)
     train_headlines = load_headlines("train", "seen")
-    train_features = build_headline_features(train_headlines, sessions=train_targets.index)
-    train_features = train_features.fillna(0.0).sort_index()
+    train_features = _build_feature_frame(
+        train_headlines,
+        sessions=train_targets.index,
+        feature_set=feature_set,
+        text_source=text_source,
+        aggregation=aggregation,
+        top_k=top_k,
+        include_structured=include_structured,
+    )
     target_return = train_targets["target_return"].sort_index()
 
-    fold_summary, oof_predictions = run_cross_validation(train_features, target_return)
+    model_factory = build_model_factory(
+        feature_set=feature_set,
+        min_df=min_df,
+        max_features=max_features,
+        ngram_max=ngram_max,
+        ridge_alpha=ridge_alpha,
+    )
+    fold_summary, oof_predictions = run_cross_validation(
+        train_features,
+        target_return,
+        model_factory=model_factory,
+    )
     print(fold_summary.to_string(index=False))
     print(f"Mean CV Sharpe: {fold_summary['sharpe'].mean():.4f}")
 
-    oof_path = OOF_DIR / "text_only_oof.csv"
+    model_name = build_model_name(
+        feature_set=feature_set,
+        text_source=text_source,
+        aggregation=aggregation,
+        include_structured=include_structured,
+    )
+    oof_path = OOF_DIR / f"{model_name}_oof.csv"
     oof_predictions.to_csv(oof_path, index_label="session")
     print(f"Saved OOF predictions to {oof_path}")
 
     if cv_only:
         return None
 
-    model = LinearBaselineModel().fit(train_features, target_return)
-    test_features = build_feature_matrix(test_split)
+    model = model_factory().fit(train_features, target_return)
+    feature_count = len(getattr(model, "feature_names_", list(train_features.columns)))
+    test_features = build_feature_matrix(
+        test_split,
+        feature_set=feature_set,
+        text_source=text_source,
+        aggregation=aggregation,
+        top_k=top_k,
+        include_structured=include_structured,
+    )
     predicted_return = model.predict_expected_return(test_features)
     predicted_uncertainty = model.predict_uncertainty(test_features)
     target_position = size_positions(predicted_return, predicted_uncertainty)
@@ -50,7 +174,6 @@ def run_pipeline(test_split: str, output_path=None, cv_only: bool = False):
     submission = build_submission(test_features.index, target_position)
     expected_sessions = load_bars(test_split, "seen")["session"].unique()
 
-    model_name = "text_only"
     if output_path is None:
         timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
         output_path = SUBMISSIONS_DIR / f"{timestamp}_{model_name}_{test_split}.csv"
@@ -58,10 +181,14 @@ def run_pipeline(test_split: str, output_path=None, cv_only: bool = False):
     metadata = build_submission_metadata(
         model_name=model_name,
         test_split=test_split,
-        feature_count=int(train_features.shape[1]),
+        feature_count=int(feature_count),
         mean_cv_sharpe=float(fold_summary["sharpe"].mean()),
         include_headlines=True,
-        notes="Text-only deterministic parser baseline",
+        notes=(
+            f"feature_set={feature_set}; text_source={text_source}; aggregation={aggregation}; "
+            f"include_structured={include_structured}; min_df={min_df}; max_features={max_features}; "
+            f"ngram_max={ngram_max}; ridge_alpha={ridge_alpha}"
+        ),
     )
     saved_path = save_submission(
         submission,
@@ -75,7 +202,7 @@ def run_pipeline(test_split: str, output_path=None, cv_only: bool = False):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Train the text-only baseline model and create a submission.")
+    parser = argparse.ArgumentParser(description="Train a text-only model and create a submission.")
     parser.add_argument(
         "--test-split",
         choices=["public_test", "private_test"],
@@ -93,6 +220,59 @@ def parse_args():
         action="store_true",
         help="Run cross-validation and write OOF predictions without fitting on all data.",
     )
+    parser.add_argument(
+        "--feature-set",
+        choices=["parser", "tfidf"],
+        default="parser",
+        help="Which text feature family to use.",
+    )
+    parser.add_argument(
+        "--text-source",
+        choices=["headline", "event", "headline_normalized", "event_normalized"],
+        default="event_normalized",
+        help="Which parsed text field to aggregate for TF-IDF experiments.",
+    )
+    parser.add_argument(
+        "--aggregation",
+        choices=["session", "company_top2", "company_topk"],
+        default="session",
+        help="How to aggregate headlines into session-level text documents.",
+    )
+    parser.add_argument(
+        "--top-k",
+        type=int,
+        default=2,
+        help="How many company slots to keep when aggregation=company_topk.",
+    )
+    parser.add_argument(
+        "--include-structured",
+        action="store_true",
+        help="Join parser-derived numeric headline features into the TF-IDF frame.",
+    )
+    parser.add_argument(
+        "--min-df",
+        type=int,
+        default=2,
+        help="Minimum document frequency for TF-IDF terms.",
+    )
+    parser.add_argument(
+        "--max-features",
+        type=int,
+        default=256,
+        help="Maximum TF-IDF terms per text column.",
+    )
+    parser.add_argument(
+        "--ngram-max",
+        type=int,
+        default=2,
+        help="Largest n-gram size to include in TF-IDF features.",
+    )
+    parser.add_argument(
+        "--ridge-alpha",
+        type=float,
+        default=10.0,
+        help="L2 regularization strength for the TF-IDF ridge model.",
+    )
     return parser.parse_args()
 
 
@@ -100,6 +280,15 @@ def main():
     args = parse_args()
     run_pipeline(
         test_split=args.test_split,
+        feature_set=args.feature_set,
+        text_source=args.text_source,
+        aggregation=args.aggregation,
+        top_k=args.top_k,
+        include_structured=args.include_structured,
+        min_df=args.min_df,
+        max_features=args.max_features,
+        ngram_max=args.ngram_max,
+        ridge_alpha=args.ridge_alpha,
         output_path=args.output,
         cv_only=args.cv_only,
     )

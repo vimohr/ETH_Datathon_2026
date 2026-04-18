@@ -3,10 +3,39 @@ import pandas as pd
 
 from src.features.headline_parser import parse_headlines
 
+TEXT_SOURCE_COLUMNS = {
+    "headline": "headline",
+    "event": "event_text",
+    "headline_normalized": "headline_normalized",
+    "event_normalized": "event_text_normalized",
+}
+
 
 def _empty_feature_frame(sessions=None) -> pd.DataFrame:
     index = pd.Index(sorted(pd.Index(sessions).unique())) if sessions is not None else pd.Index([])
     return pd.DataFrame(index=index)
+
+
+def _join_text(values: pd.Series) -> str:
+    non_empty = [str(value).strip() for value in values.fillna("").astype(str) if str(value).strip()]
+    return " ".join(non_empty)
+
+
+def _fill_mixed_feature_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    filled = frame.copy()
+    for column in filled.columns:
+        if pd.api.types.is_numeric_dtype(filled[column]):
+            filled[column] = filled[column].fillna(0.0)
+        else:
+            filled[column] = filled[column].fillna("")
+    return filled
+
+
+def _resolve_text_column(text_source: str) -> str:
+    if text_source not in TEXT_SOURCE_COLUMNS:
+        valid = ", ".join(sorted(TEXT_SOURCE_COLUMNS))
+        raise ValueError(f"Unsupported text_source={text_source!r}. Expected one of: {valid}.")
+    return TEXT_SOURCE_COLUMNS[text_source]
 
 
 def build_headline_event_table(headlines: pd.DataFrame) -> pd.DataFrame:
@@ -286,6 +315,116 @@ def build_session_text_features(
         session_features = session_features.reindex(sorted(pd.Index(sessions).unique()))
 
     return session_features.fillna(0.0).sort_index()
+
+
+def build_session_text_documents(
+    events: pd.DataFrame,
+    *,
+    sessions=None,
+    text_source: str = "headline",
+) -> pd.DataFrame:
+    if events.empty:
+        return _empty_feature_frame(sessions=sessions)
+
+    text_column = _resolve_text_column(text_source)
+    documents = (
+        events.groupby("session", sort=True)[text_column]
+        .apply(_join_text)
+        .to_frame(name="session_text")
+    )
+
+    if sessions is not None:
+        documents = documents.reindex(sorted(pd.Index(sessions).unique()))
+
+    return _fill_mixed_feature_frame(documents).sort_index()
+
+
+def build_company_text_documents(
+    events: pd.DataFrame,
+    *,
+    sessions=None,
+    text_source: str = "event_normalized",
+    top_k: int = 2,
+    include_numeric: bool = False,
+) -> pd.DataFrame:
+    if events.empty:
+        return _empty_feature_frame(sessions=sessions)
+
+    text_column = _resolve_text_column(text_source)
+    company_features = build_company_session_features(events)
+    company_features = score_company_relevance(company_features)
+
+    company_documents = (
+        events.groupby(["session", "company"], sort=True)[text_column]
+        .apply(_join_text)
+        .rename("company_text")
+    )
+    ranked = (
+        company_features.join(company_documents, how="left")
+        .reset_index()
+        .sort_values(
+            ["session", "relevance_score", "headline_count", "company"],
+            ascending=[True, False, False, True],
+        )
+        .copy()
+    )
+    ranked["slot"] = ranked.groupby("session", sort=False).cumcount() + 1
+
+    slot_frames: list[pd.DataFrame] = []
+    for slot in range(1, top_k + 1):
+        slot_frame = ranked.loc[ranked["slot"] == slot, ["session", "company_text"]].set_index("session")
+        slot_frame.columns = [f"top{slot}_text"]
+        slot_frames.append(slot_frame)
+
+    parts: list[pd.DataFrame] = []
+    if include_numeric:
+        parts.append(build_session_text_features(company_features, sessions=sessions, top_k=top_k))
+    parts.extend(slot_frames)
+
+    if not parts:
+        company_documents = pd.DataFrame(index=sorted(events["session"].unique()))
+    else:
+        company_documents = pd.concat(parts, axis=1)
+
+    if sessions is not None:
+        company_documents = company_documents.reindex(sorted(pd.Index(sessions).unique()))
+
+    return _fill_mixed_feature_frame(company_documents).sort_index()
+
+
+def build_text_feature_frame(
+    headlines: pd.DataFrame,
+    *,
+    sessions=None,
+    text_source: str = "event_normalized",
+    aggregation: str = "session",
+    top_k: int = 2,
+    include_numeric: bool = False,
+) -> pd.DataFrame:
+    if headlines.empty:
+        return _empty_feature_frame(sessions=sessions)
+
+    events = build_headline_event_table(headlines)
+
+    if aggregation == "session":
+        text_features = build_session_text_documents(events, sessions=sessions, text_source=text_source)
+        if include_numeric:
+            text_features = text_features.join(build_headline_features(headlines, sessions=sessions), how="left")
+        return _fill_mixed_feature_frame(text_features).sort_index()
+
+    if aggregation in {"company_topk", "company_top2"}:
+        company_top_k = 2 if aggregation == "company_top2" else top_k
+        return build_company_text_documents(
+            events,
+            sessions=sessions,
+            text_source=text_source,
+            top_k=company_top_k,
+            include_numeric=include_numeric,
+        )
+
+    raise ValueError(
+        f"Unsupported aggregation={aggregation!r}. Expected one of: session, company_topk, company_top2."
+    )
 
 
 def build_headline_features(headlines: pd.DataFrame, sessions=None) -> pd.DataFrame:
