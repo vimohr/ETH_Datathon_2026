@@ -6,8 +6,10 @@ PRIVATE_SPLIT_FILE ?= outputs/submissions/latest_private_test.csv
 COMPETITION_FILE ?= outputs/submissions/latest_competition.csv
 COMPETITION ?= hrt-eth-zurich-datathon-2026
 SUBMISSION_MESSAGE ?= manual submission
+TEXT_PUBLIC ?= outputs/submissions/text_public.csv
+TEXT_PRIVATE ?= outputs/submissions/text_private.csv
 
-.PHONY: install dirs cv-baseline baseline-public baseline-private baseline-competition combine-submission kaggle-submit kaggle-status
+.PHONY: install dirs cv-baseline baseline-public baseline-private baseline-competition combine-submission kaggle-submit kaggle-status cv-text text-public text-private
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt
@@ -34,3 +36,12 @@ kaggle-submit:
 
 kaggle-status:
 	$(PYTHON) -m src.pipelines.competition status --competition $(COMPETITION)
+
+cv-text:
+	$(PYTHON) -m src.pipelines.train_text --cv-only
+
+text-public:
+	$(PYTHON) -m src.pipelines.train_text --test-split public_test --output $(TEXT_PUBLIC)
+
+text-private:
+	$(PYTHON) -m src.pipelines.train_text --test-split private_test --output $(TEXT_PRIVATE)
