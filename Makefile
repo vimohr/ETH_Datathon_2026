@@ -8,8 +8,11 @@ COMPETITION ?= hrt-eth-zurich-datathon-2026
 SUBMISSION_MESSAGE ?= manual submission
 TEXT_PUBLIC ?= outputs/submissions/text_public.csv
 TEXT_PRIVATE ?= outputs/submissions/text_private.csv
+EXPERIMENT_CONFIG ?= configs/experiments/price_linear.json
+SWEEP_CONFIG_GLOB ?= configs/experiments/*.json
+EXPERIMENT_SWEEP_SPEC ?= configs/sweeps/price_text_model_grid.json
 
-.PHONY: install dirs cv-baseline baseline-public baseline-private baseline-competition combine-submission kaggle-submit kaggle-status cv-text text-public text-private
+.PHONY: install dirs cv-baseline baseline-public baseline-private baseline-competition combine-submission kaggle-submit kaggle-status cv-text text-public text-private cv-experiment experiment-public experiment-private experiment-competition experiment-submit list-experiment-options sweep-experiments generate-experiment-configs
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt
@@ -45,3 +48,27 @@ text-public:
 
 text-private:
 	$(PYTHON) -m src.pipelines.train_text --test-split private_test --output $(TEXT_PRIVATE)
+
+cv-experiment:
+	$(PYTHON) -m src.pipelines.train_experiment --config $(EXPERIMENT_CONFIG) --cv-only
+
+experiment-public:
+	$(PYTHON) -m src.pipelines.train_experiment --config $(EXPERIMENT_CONFIG) --test-split public_test
+
+experiment-private:
+	$(PYTHON) -m src.pipelines.train_experiment --config $(EXPERIMENT_CONFIG) --test-split private_test
+
+experiment-competition:
+	$(PYTHON) -m src.pipelines.train_experiment --config $(EXPERIMENT_CONFIG) --competition --competition-name $(COMPETITION)
+
+experiment-submit:
+	$(PYTHON) -m src.pipelines.train_experiment --config $(EXPERIMENT_CONFIG) --competition --competition-name $(COMPETITION) --submit-kaggle --submission-message "$(SUBMISSION_MESSAGE)"
+
+list-experiment-options:
+	$(PYTHON) -m src.pipelines.train_experiment --list-features --list-models
+
+sweep-experiments:
+	$(PYTHON) -m src.pipelines.sweep_experiments --config-glob "$(SWEEP_CONFIG_GLOB)"
+
+generate-experiment-configs:
+	$(PYTHON) -m src.pipelines.generate_experiment_configs --spec $(EXPERIMENT_SWEEP_SPEC)

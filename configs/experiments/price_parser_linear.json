@@ -1,0 +1,14 @@
+{
+  "experiment_name": "price_parser_linear",
+  "feature_blocks": [
+    {
+      "name": "price"
+    },
+    {
+      "name": "headline_parser"
+    }
+  ],
+  "model": {
+    "name": "linear"
+  }
+}

@@ -218,7 +218,11 @@ outputs/models/*
 outputs/oof/*
 outputs/figures/*
 outputs/submissions/*
+outputs/reports/*
 !outputs/models/.gitkeep
 !outputs/oof/.gitkeep
 !outputs/figures/.gitkeep
 !outputs/submissions/.gitkeep
+
+# Generated experiment configs
+configs/generated/

@@ -1,0 +1,27 @@
+{
+  "experiment_name": "price_parser_body_tfidf_ridge",
+  "feature_blocks": [
+    {
+      "name": "price"
+    },
+    {
+      "name": "headline_parser"
+    },
+    {
+      "name": "headline_tfidf",
+      "alias": "body_tfidf",
+      "params": {
+        "text_source": "body",
+        "min_df": 2,
+        "max_features": 256,
+        "ngram_max": 2
+      }
+    }
+  ],
+  "model": {
+    "name": "ridge",
+    "params": {
+      "alpha": 10.0
+    }
+  }
+}

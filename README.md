@@ -166,6 +166,50 @@ To run the standalone text-only pipeline:
 .venv/bin/python -m src.pipelines.train_text --test-split public_test
 ```
 
+To run the flexible experiment pipeline from a JSON config:
+
+```bash
+.venv/bin/python -m src.pipelines.train_experiment \
+  --config configs/experiments/price_parser_body_tfidf_ridge.json \
+  --cv-only
+
+.venv/bin/python -m src.pipelines.train_experiment \
+  --config configs/experiments/price_parser_body_tfidf_ridge.json \
+  --test-split public_test
+
+.venv/bin/python -m src.pipelines.train_experiment \
+  --config configs/experiments/price_parser_body_tfidf_ridge.json \
+  --competition
+```
+
+Sample configs live under `configs/experiments/`. Each config declares:
+
+- `feature_blocks`: ordered feature builders such as `price`, `price_technical`, `headline_parser`, `headline_tfidf`, `headline_company_tfidf`
+- `model`: currently `linear`, `ridge`, `weighted_linear`, or `weighted_ridge`
+- `cv_folds` / `seed`: optional overrides for cross-validation
+
+To list the currently supported feature blocks and models:
+
+```bash
+.venv/bin/python -m src.pipelines.train_experiment --list-features --list-models
+```
+
+Important: TF-IDF vocabulary is now fitted inside each CV fold on the training sessions only, so custom text blocks do not leak validation information.
+
+To generate both split files, combine them, and optionally submit to Kaggle from the same command:
+
+```bash
+.venv/bin/python -m src.pipelines.train_experiment \
+  --config configs/experiments/price_parser_body_tfidf_ridge.json \
+  --competition
+
+.venv/bin/python -m src.pipelines.train_experiment \
+  --config configs/experiments/price_parser_body_tfidf_ridge.json \
+  --competition \
+  --submit-kaggle \
+  --submission-message "price+parser+tfidf ridge"
+```
+
 ## Competition Submission Workflow
 
 Generate split submissions first, then combine them into one Kaggle-ready file:
@@ -192,6 +236,43 @@ make combine-submission \
   PUBLIC_SPLIT_FILE=outputs/submissions/my_public.csv \
   PRIVATE_SPLIT_FILE=outputs/submissions/my_private.csv \
   COMPETITION_FILE=outputs/submissions/my_combined.csv
+```
+
+The flexible experiment pipeline can now do the same workflow end to end:
+
+```bash
+make cv-experiment EXPERIMENT_CONFIG=configs/experiments/price_parser_body_tfidf_ridge.json
+make experiment-competition EXPERIMENT_CONFIG=configs/experiments/price_parser_body_tfidf_ridge.json
+make experiment-submit EXPERIMENT_CONFIG=configs/experiments/price_parser_body_tfidf_ridge.json SUBMISSION_MESSAGE="price+parser+tfidf ridge"
+```
+
+To benchmark many configs into one leaderboard:
+
+```bash
+.venv/bin/python -m src.pipelines.sweep_experiments --config-glob "configs/experiments/*.json"
+
+make sweep-experiments SWEEP_CONFIG_GLOB="configs/experiments/*.json"
+```
+
+This writes:
+
+- `outputs/reports/latest_experiment_sweep.csv`
+- `outputs/reports/latest_experiment_sweep_folds.csv`
+
+To generate many concrete experiment configs from one sweep spec:
+
+```bash
+.venv/bin/python -m src.pipelines.generate_experiment_configs \
+  --spec configs/sweeps/price_text_model_grid.json
+
+make generate-experiment-configs EXPERIMENT_SWEEP_SPEC=configs/sweeps/price_text_model_grid.json
+```
+
+The sample sweep spec expands to a directory of config JSON files under `configs/generated/`, which you can then pass into the sweep runner:
+
+```bash
+.venv/bin/python -m src.pipelines.sweep_experiments \
+  --config-glob "configs/generated/price_text_model_grid/*.json"
 ```
 
 ### Kaggle credentials
