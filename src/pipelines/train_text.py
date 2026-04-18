@@ -7,7 +7,8 @@ import pandas as pd
 from src.data.load import load_bars, load_headlines, load_train_bars
 from src.data.targets import build_train_targets
 from src.evaluation.validation import run_cross_validation
-from src.features.headlines import build_headline_features, build_text_feature_frame
+from src.features.headlines import build_headline_event_table, build_headline_features, build_text_feature_frame
+from src.features.text_embeddings import build_embedding_feature_frame
 from src.models.baseline import LinearBaselineModel
 from src.models.text_linear import RidgeTextModel
 from src.models.uncertainty import size_positions
@@ -24,6 +25,9 @@ def _build_feature_frame(
     aggregation: str,
     top_k: int,
     include_structured: bool,
+    embedding_model: str,
+    embedding_batch_size: int,
+    normalize_embeddings: bool,
 ) -> pd.DataFrame:
     if feature_set == "parser":
         return build_headline_features(headlines, sessions=sessions).fillna(0.0).sort_index()
@@ -38,6 +42,20 @@ def _build_feature_frame(
             include_numeric=include_structured,
         ).sort_index()
 
+    if feature_set == "embeddings":
+        events = build_headline_event_table(headlines)
+        return build_embedding_feature_frame(
+            events,
+            sessions=sessions,
+            text_source=text_source,
+            aggregation=aggregation,
+            model_name=embedding_model,
+            batch_size=embedding_batch_size,
+            normalize_embeddings=normalize_embeddings,
+            top_k=top_k,
+            include_structured=include_structured,
+        ).sort_index()
+
     raise ValueError(f"Unsupported feature_set={feature_set!r}.")
 
 
@@ -49,6 +67,9 @@ def build_feature_matrix(
     aggregation: str,
     top_k: int,
     include_structured: bool,
+    embedding_model: str,
+    embedding_batch_size: int,
+    normalize_embeddings: bool,
 ) -> pd.DataFrame:
     sessions = load_bars(split, "seen")["session"].unique()
     headlines = load_headlines(split, "seen")
@@ -60,6 +81,9 @@ def build_feature_matrix(
         aggregation=aggregation,
         top_k=top_k,
         include_structured=include_structured,
+        embedding_model=embedding_model,
+        embedding_batch_size=embedding_batch_size,
+        normalize_embeddings=normalize_embeddings,
     )
 
 
@@ -88,9 +112,17 @@ def build_model_name(
     text_source: str,
     aggregation: str,
     include_structured: bool,
+    embedding_model: str,
 ) -> str:
     if feature_set == "parser":
         return "text_only_parser"
+
+    if feature_set == "embeddings":
+        model_slug = embedding_model.rsplit("/", maxsplit=1)[-1].lower().replace("-", "_")
+        name_parts = ["text_embed", aggregation, text_source, model_slug]
+        if include_structured:
+            name_parts.append("structured")
+        return "_".join(name_parts)
 
     name_parts = ["text_tfidf", aggregation, text_source]
     if include_structured:
@@ -110,6 +142,9 @@ def run_pipeline(
     max_features: int,
     ngram_max: int,
     ridge_alpha: float,
+    embedding_model: str,
+    embedding_batch_size: int,
+    normalize_embeddings: bool,
     output_path=None,
     cv_only: bool = False,
 ):
@@ -126,6 +161,9 @@ def run_pipeline(
         aggregation=aggregation,
         top_k=top_k,
         include_structured=include_structured,
+        embedding_model=embedding_model,
+        embedding_batch_size=embedding_batch_size,
+        normalize_embeddings=normalize_embeddings,
     )
     target_return = train_targets["target_return"].sort_index()
 
@@ -149,6 +187,7 @@ def run_pipeline(
         text_source=text_source,
         aggregation=aggregation,
         include_structured=include_structured,
+        embedding_model=embedding_model,
     )
     oof_path = OOF_DIR / f"{model_name}_oof.csv"
     oof_predictions.to_csv(oof_path, index_label="session")
@@ -166,6 +205,9 @@ def run_pipeline(
         aggregation=aggregation,
         top_k=top_k,
         include_structured=include_structured,
+        embedding_model=embedding_model,
+        embedding_batch_size=embedding_batch_size,
+        normalize_embeddings=normalize_embeddings,
     )
     predicted_return = model.predict_expected_return(test_features)
     predicted_uncertainty = model.predict_uncertainty(test_features)
@@ -187,7 +229,9 @@ def run_pipeline(
         notes=(
             f"feature_set={feature_set}; text_source={text_source}; aggregation={aggregation}; "
             f"include_structured={include_structured}; min_df={min_df}; max_features={max_features}; "
-            f"ngram_max={ngram_max}; ridge_alpha={ridge_alpha}"
+            f"ngram_max={ngram_max}; ridge_alpha={ridge_alpha}; "
+            f"embedding_model={embedding_model}; embedding_batch_size={embedding_batch_size}; "
+            f"normalize_embeddings={normalize_embeddings}"
         ),
     )
     saved_path = save_submission(
@@ -222,7 +266,7 @@ def parse_args():
     )
     parser.add_argument(
         "--feature-set",
-        choices=["parser", "tfidf"],
+        choices=["parser", "tfidf", "embeddings"],
         default="parser",
         help="Which text feature family to use.",
     )
@@ -273,6 +317,22 @@ def parse_args():
         default=10.0,
         help="L2 regularization strength for the TF-IDF ridge model.",
     )
+    parser.add_argument(
+        "--embedding-model",
+        default="sentence-transformers/all-MiniLM-L6-v2",
+        help="SentenceTransformer model name for frozen embedding experiments.",
+    )
+    parser.add_argument(
+        "--embedding-batch-size",
+        type=int,
+        default=128,
+        help="Batch size used when encoding text embeddings.",
+    )
+    parser.add_argument(
+        "--no-normalize-embeddings",
+        action="store_true",
+        help="Disable L2 normalization inside the frozen embedding encoder.",
+    )
     return parser.parse_args()
 
 
@@ -289,6 +349,9 @@ def main():
         max_features=args.max_features,
         ngram_max=args.ngram_max,
         ridge_alpha=args.ridge_alpha,
+        embedding_model=args.embedding_model,
+        embedding_batch_size=args.embedding_batch_size,
+        normalize_embeddings=not args.no_normalize_embeddings,
         output_path=args.output,
         cv_only=args.cv_only,
     )
