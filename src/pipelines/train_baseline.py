@@ -20,7 +20,10 @@ def build_feature_matrix(split: str, include_headlines: bool = False) -> pd.Data
     features = build_price_features(bars)
     if include_headlines:
         headlines = load_headlines(split, "seen")
-        features = features.join(build_headline_features(headlines, sessions=features.index), how="left")
+        features = features.join(
+            build_headline_features(headlines, sessions=features.index, bars=bars),
+            how="left",
+        )
     return features.fillna(0.0).sort_index()
 
 
@@ -34,7 +37,7 @@ def run_pipeline(test_split: str, include_headlines: bool, output_path=None, cv_
     if include_headlines:
         train_headlines = load_headlines("train", "seen")
         train_features = train_features.join(
-            build_headline_features(train_headlines, sessions=train_features.index),
+            build_headline_features(train_headlines, sessions=train_features.index, bars=train_seen_bars),
             how="left",
         )
 

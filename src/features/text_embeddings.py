@@ -6,7 +6,9 @@ import pandas as pd
 
 from src.features.headlines import (
     build_company_session_features,
+    build_headline_price_interaction_features,
     build_headline_event_table,
+    build_session_sequence_features,
     build_session_text_features,
     score_company_relevance,
 )
@@ -205,14 +207,72 @@ def _relevance_summary_features(company_features: pd.DataFrame, *, sessions=None
     return session_text.reindex(columns=existing_columns).fillna(0.0)
 
 
+def _combine_feature_blocks(feature_blocks: list[pd.DataFrame], *, sessions=None) -> pd.DataFrame:
+    non_empty_blocks = [block for block in feature_blocks if block is not None and not block.empty]
+    if not non_empty_blocks:
+        return _empty_feature_frame(sessions=sessions)
+
+    combined = pd.concat(non_empty_blocks, axis=1)
+    if sessions is not None:
+        combined = combined.reindex(sorted(pd.Index(sessions).unique()))
+    return combined.fillna(0.0).sort_index()
+
+
+def _build_optional_structured_features(
+    events: pd.DataFrame,
+    *,
+    sessions=None,
+    bars: pd.DataFrame | None = None,
+    company_features: pd.DataFrame | None = None,
+    include_relevance_summary: bool = False,
+    include_structured_features: bool = False,
+    include_sequence_features: bool = False,
+    include_price_interactions: bool = False,
+) -> pd.DataFrame:
+    feature_blocks: list[pd.DataFrame] = []
+
+    scored_company_features = company_features
+    needs_company_features = include_relevance_summary or include_structured_features or include_price_interactions
+    if needs_company_features and scored_company_features is None:
+        scored_company_features = score_company_relevance(build_company_session_features(events))
+
+    if include_structured_features:
+        feature_blocks.append(
+            build_session_text_features(scored_company_features, sessions=sessions, top_k=2)
+        )
+    elif include_relevance_summary:
+        feature_blocks.append(_relevance_summary_features(scored_company_features, sessions=sessions))
+
+    if include_sequence_features:
+        feature_blocks.append(build_session_sequence_features(events, sessions=sessions))
+
+    if include_price_interactions:
+        if bars is None:
+            raise ValueError("bars is required when include_price_interactions=True.")
+        feature_blocks.append(
+            build_headline_price_interaction_features(
+                events,
+                scored_company_features,
+                bars,
+                sessions=sessions,
+            )
+        )
+
+    return _combine_feature_blocks(feature_blocks, sessions=sessions)
+
+
 def _build_session_embedding_features(
     events: pd.DataFrame,
     *,
     sessions=None,
+    bars: pd.DataFrame | None = None,
     text_source: str,
     model_name: str,
     batch_size: int = 128,
     normalize_embeddings: bool = True,
+    include_structured_features: bool = False,
+    include_sequence_features: bool = False,
+    include_price_interactions: bool = False,
 ) -> pd.DataFrame:
     embedded = _build_headline_embedding_table(
         events,
@@ -234,22 +294,30 @@ def _build_session_embedding_features(
         prefix="recent_",
     )
     features = pd.concat([session_mean, recent_weighted], axis=1)
-
-    if sessions is not None:
-        features = features.reindex(sorted(pd.Index(sessions).unique()))
-
-    return features.fillna(0.0).sort_index()
+    structured_features = _build_optional_structured_features(
+        events,
+        sessions=sessions,
+        bars=bars,
+        include_structured_features=include_structured_features,
+        include_sequence_features=include_sequence_features,
+        include_price_interactions=include_price_interactions,
+    )
+    return _combine_feature_blocks([features, structured_features], sessions=sessions)
 
 
 def _build_company_weighted_embedding_features(
     events: pd.DataFrame,
     *,
     sessions=None,
+    bars: pd.DataFrame | None = None,
     text_source: str,
     model_name: str,
     batch_size: int = 128,
     normalize_embeddings: bool = True,
     include_relevance_summary: bool = True,
+    include_structured_features: bool = False,
+    include_sequence_features: bool = False,
+    include_price_interactions: bool = False,
 ) -> pd.DataFrame:
     embedded = _build_headline_embedding_table(
         events,
@@ -285,32 +353,44 @@ def _build_company_weighted_embedding_features(
     weighted_frame = ranked[weighted_columns].mul(ranked["relevance_weight"], axis=0)
     weighted_frame["session"] = ranked["session"].to_numpy()
     features = weighted_frame.groupby("session", sort=True).sum().add_prefix("weighted_")
-
-    if include_relevance_summary:
-        features = features.join(_relevance_summary_features(company_features, sessions=sessions), how="left")
-
-    if sessions is not None:
-        features = features.reindex(sorted(pd.Index(sessions).unique()))
-
-    return features.fillna(0.0).sort_index()
+    structured_features = _build_optional_structured_features(
+        events,
+        sessions=sessions,
+        bars=bars,
+        company_features=company_features,
+        include_relevance_summary=include_relevance_summary,
+        include_structured_features=include_structured_features,
+        include_sequence_features=include_sequence_features,
+        include_price_interactions=include_price_interactions,
+    )
+    return _combine_feature_blocks([features, structured_features], sessions=sessions)
 
 
 def build_text_embedding_features(
     headlines: pd.DataFrame,
     *,
     sessions=None,
+    bars: pd.DataFrame | None = None,
     text_source: str = "event_normalized",
     aggregation: str = "company_weighted",
     model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
     batch_size: int = 128,
     normalize_embeddings: bool = True,
     include_relevance_summary: bool = True,
+    include_structured_features: bool = False,
+    include_sequence_features: bool = False,
+    include_price_interactions: bool = False,
 ) -> pd.DataFrame:
     """Build one session-level text embedding feature block from raw headlines.
 
     This is the low-level entrypoint used when the caller wants one specific
     embedding family, for example `company_weighted` on `event_normalized`.
     The returned frame is numeric-only and indexed by `session`.
+
+    Optional add-ons:
+    - `include_structured_features`: append the full structured parser feature stack
+    - `include_sequence_features`: append session-level sequence / burst features
+    - `include_price_interactions`: append text-price interaction features; requires `bars`
     """
     if headlines.empty:
         return _empty_feature_frame(sessions=sessions)
@@ -320,20 +400,28 @@ def build_text_embedding_features(
         return _build_session_embedding_features(
             events,
             sessions=sessions,
+            bars=bars,
             text_source=text_source,
             model_name=model_name,
             batch_size=batch_size,
             normalize_embeddings=normalize_embeddings,
+            include_structured_features=include_structured_features,
+            include_sequence_features=include_sequence_features,
+            include_price_interactions=include_price_interactions,
         )
     if aggregation == "company_weighted":
         return _build_company_weighted_embedding_features(
             events,
             sessions=sessions,
+            bars=bars,
             text_source=text_source,
             model_name=model_name,
             batch_size=batch_size,
             normalize_embeddings=normalize_embeddings,
             include_relevance_summary=include_relevance_summary,
+            include_structured_features=include_structured_features,
+            include_sequence_features=include_sequence_features,
+            include_price_interactions=include_price_interactions,
         )
 
     raise ValueError(
@@ -345,6 +433,7 @@ def build_text_embedding_feature_map(
     headlines: pd.DataFrame,
     *,
     sessions=None,
+    bars: pd.DataFrame | None = None,
     blocks: list[dict] | tuple[dict, ...] | None = None,
 ) -> pd.DataFrame:
     """Build and join multiple prefixed text embedding blocks.
@@ -374,12 +463,16 @@ def build_text_embedding_feature_map(
         feature_frame = build_text_embedding_features(
             headlines,
             sessions=sessions,
+            bars=bars,
             text_source=block.get("text_source", "event_normalized"),
             aggregation=block.get("aggregation", "company_weighted"),
             model_name=block.get("model_name", "sentence-transformers/all-MiniLM-L6-v2"),
             batch_size=int(block.get("batch_size", 128)),
             normalize_embeddings=bool(block.get("normalize_embeddings", True)),
             include_relevance_summary=bool(block.get("include_relevance_summary", True)),
+            include_structured_features=bool(block.get("include_structured_features", False)),
+            include_sequence_features=bool(block.get("include_sequence_features", False)),
+            include_price_interactions=bool(block.get("include_price_interactions", False)),
         ).add_prefix(f"{block_name}__")
         feature_blocks.append(feature_frame)
 
