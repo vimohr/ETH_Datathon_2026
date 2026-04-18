@@ -31,6 +31,13 @@ the seen data), we will buy/sell this amount of stock at the close price of that
 bar. We will hold it until the end of the session, where we will sell/buy it
 back at the close price of the last bar.
 
+For the Kaggle competition, the final upload must contain **both** test splits:
+
+- `public_test`: sessions `1000..10999` (`10000` rows)
+- `private_test`: sessions `11000..20999` (`10000` rows)
+
+Total expected rows in the uploaded competition file: `20000`.
+
 ## Metric
 
 We will compute the Sharpe ratio of your trading strategy across the test sessions:
@@ -119,6 +126,7 @@ The submission flow now also writes:
 - a versioned submission filename
 - a sidecar JSON metadata file
 - `outputs/submissions/latest_<split>.csv` as the current handoff artifact
+- `outputs/submissions/latest_competition.csv` as the latest combined Kaggle-ready file
 - `outputs/submissions/registry.jsonl` as a simple audit trail
 
 ## Verified Split
@@ -139,6 +147,7 @@ source .venv/bin/activate
 make cv-baseline
 make baseline-public
 make baseline-private
+make combine-submission
 ```
 
 To include simple headline features in the baseline:
@@ -146,3 +155,62 @@ To include simple headline features in the baseline:
 ```bash
 .venv/bin/python -m src.pipelines.train_baseline --test-split public_test --include-headlines
 ```
+
+## Competition Submission Workflow
+
+Generate split submissions first, then combine them into one Kaggle-ready file:
+
+```bash
+make baseline-public
+make baseline-private
+make combine-submission
+```
+
+By default `make combine-submission` reads:
+
+- `outputs/submissions/latest_public_test.csv`
+- `outputs/submissions/latest_private_test.csv`
+
+and writes:
+
+- `outputs/submissions/latest_competition.csv`
+
+You can override the inputs and output:
+
+```bash
+make combine-submission \
+  PUBLIC_SPLIT_FILE=outputs/submissions/my_public.csv \
+  PRIVATE_SPLIT_FILE=outputs/submissions/my_private.csv \
+  COMPETITION_FILE=outputs/submissions/my_combined.csv
+```
+
+### Kaggle credentials
+
+The repo will look for credentials in this order:
+
+1. shell environment variables
+2. `ETH_Datathon_2026/.env`
+3. parent workspace `.env`
+
+Required values:
+
+- `KAGGLE_USERNAME`
+- either `KAGGLE_KEY` or `KAGGLE_API_TOKEN`
+
+If only `KAGGLE_API_TOKEN` is present, the tooling maps it to `KAGGLE_KEY`.
+
+### Submit and Inspect Status
+
+Submit the combined file:
+
+```bash
+make kaggle-submit SUBMISSION_MESSAGE="baseline combined submission"
+```
+
+Inspect recent submissions, including Kaggle's hidden `error_description` field:
+
+```bash
+make kaggle-status
+```
+
+The status helper is intentionally routed through the Python API rather than the stock CLI table, because the stock CLI omits useful failure details like row-count mismatches.

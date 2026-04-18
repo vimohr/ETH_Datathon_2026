@@ -5,7 +5,15 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.data.load import load_bars
 from src.paths import ROOT, SUBMISSIONS_DIR
+
+
+def _resolve_path(path_like) -> Path:
+    path = Path(path_like)
+    if not path.is_absolute():
+        path = ROOT / path
+    return path
 
 
 def build_submission(sessions, target_position) -> pd.DataFrame:
@@ -53,7 +61,7 @@ def build_submission_metadata(
     *,
     model_name: str,
     test_split: str,
-    feature_count: int,
+    feature_count: int | None = None,
     mean_cv_sharpe: float | None = None,
     include_headlines: bool = False,
     notes: str | None = None,
@@ -63,9 +71,10 @@ def build_submission_metadata(
         "git_commit": current_git_commit(),
         "model_name": model_name,
         "test_split": test_split,
-        "feature_count": feature_count,
         "include_headlines": include_headlines,
     }
+    if feature_count is not None:
+        metadata["feature_count"] = int(feature_count)
     if mean_cv_sharpe is not None:
         metadata["mean_cv_sharpe"] = float(mean_cv_sharpe)
     if notes:
@@ -76,11 +85,42 @@ def build_submission_metadata(
 def append_submission_registry(output_path: Path, metadata: dict) -> Path:
     registry_path = SUBMISSIONS_DIR / "registry.jsonl"
     registry_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path = output_path.resolve()
-    record = {"submission_path": str(output_path.relative_to(ROOT)), **metadata}
+    try:
+        submission_path = str(output_path.relative_to(ROOT))
+    except ValueError:
+        submission_path = str(output_path)
+    record = {"submission_path": submission_path, **metadata}
     with registry_path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(record, sort_keys=True) + "\n")
     return registry_path
+
+
+def expected_sessions(split: str) -> pd.Index:
+    sessions = load_bars(split, "seen")["session"].unique()
+    return pd.Index(sessions).astype(int).sort_values()
+
+
+def expected_competition_sessions() -> pd.Index:
+    return expected_sessions("public_test").append(expected_sessions("private_test")).sort_values()
+
+
+def load_submission_file(path_like) -> pd.DataFrame:
+    path = _resolve_path(path_like)
+    return pd.read_csv(path)
+
+
+def combine_split_submissions(public_submission: pd.DataFrame, private_submission: pd.DataFrame) -> pd.DataFrame:
+    public_validated = validate_submission(public_submission, expected_sessions=expected_sessions("public_test"))
+    private_validated = validate_submission(private_submission, expected_sessions=expected_sessions("private_test"))
+    combined = pd.concat([public_validated, private_validated], ignore_index=True)
+    combined = combined.sort_values("session").reset_index(drop=True)
+    return validate_submission(combined, expected_sessions=expected_competition_sessions())
+
+
+def combine_submission_files(public_path, private_path) -> pd.DataFrame:
+    public_submission = load_submission_file(public_path)
+    private_submission = load_submission_file(private_path)
+    return combine_split_submissions(public_submission, private_submission)
 
 
 def save_submission(
@@ -90,7 +130,7 @@ def save_submission(
     metadata: dict | None = None,
     latest_alias: str | None = None,
 ) -> Path:
-    output_path = Path(output_path).resolve()
+    output_path = _resolve_path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     validate_submission(submission, expected_sessions=expected_sessions)
     submission.to_csv(output_path, index=False)

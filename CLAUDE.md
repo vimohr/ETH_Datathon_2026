@@ -71,6 +71,7 @@ outputs/
   submissions/
     {timestamp}_{model_name}_{split}.csv     # versioned, with .json sidecar
     latest_{split}.csv                       # current handoff artifact
+    latest_competition.csv                   # combined public+private Kaggle upload
     registry.jsonl                           # append-only audit trail
   oof/{model_name}_oof.csv                   # for blending + diagnostics
   models/                                    # serialized models if/when we save them
@@ -81,6 +82,7 @@ docs/
 ```
 
 When creating a submission, **always** go through `src/submission.py::save_submission` — it writes the CSV, the JSON metadata sidecar, the `latest_<split>.csv` alias, and appends to `registry.jsonl`.
+The Kaggle upload itself should come from a combined `latest_competition.csv`, not from the legacy root `submission.csv`.
 
 ## Running things
 
@@ -91,11 +93,17 @@ The repo runs on Windows but the Makefile uses Unix paths (`.venv/bin/python`). 
 make cv-baseline
 make baseline-public
 make baseline-private
+make combine-submission
+make kaggle-submit SUBMISSION_MESSAGE="your message"
+make kaggle-status
 
 # Native Windows (PowerShell or cmd) — call the module directly:
 .venv\Scripts\python.exe -m src.pipelines.train_baseline --cv-only
 .venv\Scripts\python.exe -m src.pipelines.train_baseline --test-split public_test
 .venv\Scripts\python.exe -m src.pipelines.train_baseline --test-split private_test
+.venv\Scripts\python.exe -m src.pipelines.competition combine
+.venv\Scripts\python.exe -m src.pipelines.competition submit --message "your message"
+.venv\Scripts\python.exe -m src.pipelines.competition status
 ```
 
 CLI flags on `train_baseline`:
@@ -103,6 +111,11 @@ CLI flags on `train_baseline`:
 - `--test-split {public_test,private_test}` — which split to score.
 - `--include-headlines` — join headline features (Make targets do **not** pass this; use the module call).
 - `--output PATH` — override submission path; default is `outputs/submissions/{timestamp}_{model_name}_{split}.csv`.
+
+Competition submission rules:
+- Kaggle expects one uploaded CSV with `20000` rows: `10000` public-test sessions (`1000..10999`) plus `10000` private-test sessions (`11000..20999`).
+- Use `src.pipelines.competition combine` to merge split submissions safely and validate the full session coverage.
+- Use `src.pipelines.competition status` instead of the raw Kaggle CLI when debugging failures, because it prints `error_description`.
 
 ## Conventions
 
@@ -120,6 +133,7 @@ Every meaningful run should add a row to `docs/experiment_log.md` with: timestam
 ## Team ownership (from `docs/team_notes.md`)
 
 - Infrastructure: `src/data/`, `src/submission.py`, `Makefile`, output paths.
+- Competition ops: `src/pipelines/competition.py`, `src/kaggle_utils.py`, combined Kaggle uploads, status checks.
 - Pricing: `src/features/price.py`, price EDA, session-level heuristics.
 - Modeling & uncertainty: `src/models/`, `src/evaluation/`, position sizing, calibration.
 - Headlines: `src/features/headlines.py`, parsing, relevance filtering.
