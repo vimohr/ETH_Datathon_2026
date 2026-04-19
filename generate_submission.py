@@ -14,7 +14,7 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "pipeline_files"))
 
 from pipeline_files.all_features import extract_features
-from pipeline_files.all_models import BestDeep84
+from pipeline_files.all_models import WinnerBottlePro
 
 DATA_DIR = "data"
 
@@ -35,8 +35,8 @@ X_train = X_train.loc[y_train.index]
 print(f"  Training samples: {len(X_train)}, features: {X_train.shape[1]}")
 
 # ── 3. Train the winning model on ALL training data ──
-print("Training winning model (Deep 8,4 do=0.3 wd=0.15)...")
-model = BestDeep84(X_train.shape[1])
+print("Training winning model (WinnerBottlePro)...")
+model = WinnerBottlePro(X_train.shape[1])
 model.fit(X_train, y_train)
 
 # ── 4. Load & predict on test sets ──

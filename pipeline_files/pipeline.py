@@ -202,11 +202,11 @@ def split_and_train_pipeline(model_class, extract_features_func,
 
 
 if __name__ == "__main__":
-    from all_models import BestDeep84
+    from all_models import WinnerBottlePro
     from all_features import extract_features
 
-    print("Running 5-fold CV with BestDeep84...")
+    print("Running 5-fold CV with WinnerBottlePro...")
     trained_model, train_data, val_data = split_and_train_pipeline(
-        BestDeep84, extract_features
+        WinnerBottlePro, extract_features
     )
     print("Done!")
