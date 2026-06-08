@@ -1,0 +1,17 @@
+Loading training data...
+Extracting training features...
+  Training samples: 1000, features: 20
+Training winning model (Deep 8,4 do=0.3 wd=0.15)...
+Loading test data...
+Extracting test features...
+  Public test sessions:  10000
+  Private test sessions: 10000
+
+Submission saved to submission.csv
+  Total rows: 20000
+  Sessions: 1000 .. 20999
+  Position range: [-56.20, 25.29]
+  Mean position: 18.0161
+  Std position:  7.4229
+
+Done!
